@@ -1,6 +1,20 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/macos,python,vim
-# Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,vim
+# Created by https://www.toptal.com/developers/gitignore/api/macos,vim,python,jupyternotebooks
+# Edit at https://www.toptal.com/developers/gitignore?templates=macos,vim,python,jupyternotebooks
+
+### JupyterNotebooks ###
+# gitignore template for Jupyter Notebooks
+# website: http://jupyter.org/
+
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Remove previous ipynb_checkpoints
+#   git rm -r .ipynb_checkpoints/
 
 ### macOS ###
 # General
@@ -110,11 +124,8 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints
 
 # IPython
-profile_default/
-ipython_config.py
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -192,4 +203,4 @@ tags
 # Persistent undo
 [._]*.un~
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,python,vim
+# End of https://www.toptal.com/developers/gitignore/api/macos,vim,python,jupyternotebooks
