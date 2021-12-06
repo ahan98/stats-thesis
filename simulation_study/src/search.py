@@ -1,4 +1,5 @@
 from .perm_test import pval
+from itertools import combinations
 
 
 """
@@ -18,11 +19,13 @@ Convergence criteria:
 (2) We have an approximation for delta0 such that the corresponding p-value is within
     a desired margin of alpha.
 """
-def search(x1, x2, start, end, margin=0.005, alpha=0.05, threshold=1):
+def search(x1, x2, partitions, start, end, margin=0.005, alpha=0.05, threshold=1):
+
     # Check that the p-values associated with delta = start and delta = end
     # are on opposite sides of alpha.
-    p_start = pval(x1, x2, delta=start)
-    p_end = pval(x1, x2, delta=end)
+    p_start = pval(x1, x2, partitions, delta=start)[1]
+    p_end = pval(x1, x2, partitions, delta=end)[1]
+    print("p_start =", p_start, "\np_end=", p_end)
     if (p_start - alpha) * (p_end - alpha) >= 0:
         return None
 
@@ -33,7 +36,7 @@ def search(x1, x2, start, end, margin=0.005, alpha=0.05, threshold=1):
         mid = (start + end) / 2
         print("delta0 =", mid, " in [", start, ",", end, "]")
 
-        delta, p_new = pval(x1, x2, delta=mid)
+        delta, p_new = pval(x1, x2, partitions, delta=mid)
 
         if p and percent_change(p, p_new) <= threshold:
             # (1) percent change is below threshold
@@ -56,3 +59,4 @@ def search(x1, x2, start, end, margin=0.005, alpha=0.05, threshold=1):
 
 def percent_change(old, new):
     return 100 * abs(new - old) / old
+
