@@ -1,7 +1,6 @@
 from .perm_test import pval
 from itertools import combinations
 
-
 """
 Parameters:
 x1 - data for group 1
@@ -20,7 +19,6 @@ Convergence criteria:
     a desired margin of alpha.
 """
 def search(x1, x2, partitions, start, end, margin=0.005, alpha=0.05, threshold=1):
-
     # Check that the p-values associated with delta = start and delta = end
     # are on opposite sides of alpha.
     p_start = pval(x1, x2, partitions, delta=start)[1]
@@ -29,32 +27,33 @@ def search(x1, x2, partitions, start, end, margin=0.005, alpha=0.05, threshold=1
     if (p_start - alpha) * (p_end - alpha) >= 0:
         return None
 
-    p = i = 0
+    i = 0
+    p = p_new = delta = None
     while True:
         print("iteration", i)
 
-        mid = (start + end) / 2
-        print("delta0 =", mid, " in [", start, ",", end, "]")
+        delta = (start + end) / 2
+        print("delta =", delta, " in [", start, ",", end, "]")
 
-        delta, p_new = pval(x1, x2, partitions, delta=mid)
+        _, p_new = pval(x1, x2, partitions, delta=delta)
+        print("p_new =", p_new)
 
         if p and percent_change(p, p_new) <= threshold:
             # (1) percent change is below threshold
-            p = p_new
             break
 
         if p_new > alpha + margin:
-            start = mid
+            start = delta
         elif p_new < alpha - margin:
-            end = mid
+            end = delta
         else:
             # (2) p-value is within margin of error
-            p = p_new
             break
 
+        p = p_new
         i += 1
 
-    return delta, p
+    return delta
 
 
 def percent_change(old, new):
