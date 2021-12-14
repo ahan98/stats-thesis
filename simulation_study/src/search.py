@@ -1,5 +1,4 @@
-from .perm_test import pval
-from itertools import combinations
+from .perm_test import pval, pval_vectorized
 
 """
 Parameters:
@@ -21,22 +20,22 @@ Convergence criteria:
 def search(x1, x2, partitions, start, end, margin=0.005, alpha=0.05, threshold=1):
     # Check that the p-values associated with delta = start and delta = end
     # are on opposite sides of alpha.
-    p_start = pval(x1, x2, partitions, delta=start)[1]
-    p_end = pval(x1, x2, partitions, delta=end)[1]
-    print("p_start =", p_start, "\np_end=", p_end)
+    p_start = pval_vectorized(x1, x2, partitions, delta=start)
+    p_end = pval_vectorized(x1, x2, partitions, delta=end)
+    # print("p_start =", p_start, "\np_end=", p_end)
     if (p_start - alpha) * (p_end - alpha) >= 0:
         return None
 
     i = 0
     p = p_new = delta = None
     while True:
-        print("iteration", i)
+        # print("iteration", i)
 
         delta = (start + end) / 2
-        print("delta =", delta, " in [", start, ",", end, "]")
+        # print("delta =", delta, " in [", start, ",", end, "]")
 
-        _, p_new = pval(x1, x2, partitions, delta=delta)
-        print("p_new =", p_new)
+        p_new = pval_vectorized(x1, x2, partitions, delta=delta)
+        # print("p_new =", p_new)
 
         if p and percent_change(p, p_new) <= threshold:
             # (1) percent change is below threshold
