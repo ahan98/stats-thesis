@@ -1,4 +1,4 @@
-from .perm_test import pval, pval_vectorized
+from .perm_test import pval_vectorized
 
 """
 Parameters:
@@ -23,8 +23,7 @@ def search(x1, x2, partitions, start, end, margin=0.005, alpha=0.05, threshold=1
     p_start = pval_vectorized(x1, x2, partitions, delta=start)
     p_end = pval_vectorized(x1, x2, partitions, delta=end)
     # print("p_start =", p_start, "\np_end=", p_end)
-    if (p_start - alpha) * (p_end - alpha) >= 0:
-        return None
+    assert (p_start - alpha) * (p_end - alpha) <= 0
 
     i = 0
     p = p_new = delta = None
