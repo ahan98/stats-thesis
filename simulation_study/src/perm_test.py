@@ -124,11 +124,8 @@ def ttest_ind(x1s, x2s, n1, n2, pooled=True):
     mean2 = sum2 / n2
     #print("means", mean1, mean2)
 
-    # var1 = np.var(x1s, ddof=1)
-    # var2 = np.var(x2s, ddof=1)
-    sample_var = lambda x, mean, n: (np.sum(x**2, axis=-1) - n*mean**2) / (n-1)
-    var1 = sample_var(x1s, mean1, n1)
-    var2 = sample_var(x2s, mean2, n2)
+    var1 = np.var(x1s, ddof=1, axis=-1)
+    var2 = np.var(x2s, ddof=1, axis=-1)
     #print("sample variances", var1, var2)
 
     # http://www.stat.yale.edu/Courses/1997-98/101/meancomp.htm
