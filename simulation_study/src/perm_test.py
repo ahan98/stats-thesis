@@ -92,6 +92,8 @@ def pval(x1, x2, partitions, delta=0, pooled=True, alternative="two-sided"):
     """
     n1, n2 = len(x1), len(x2)
     #print(n1, n2)
+    # In general, due to this shift, the observed test statistic is not constant,
+    # even though the observed data (prior to the shift) remains the same.
     x1 = x1 - delta
 
     combined = np.append(x1, x2)
@@ -99,7 +101,9 @@ def pval(x1, x2, partitions, delta=0, pooled=True, alternative="two-sided"):
     x2s = combined[partitions[:,n1:]]
     ts = ttest_ind(x1s, x2s, n1, n2, pooled)
     t_obs = ttest_ind(x1, x2, n1, n2, pooled)
-    #print("t_obs =", t_obs)
+    print("[pval]", x1, x2)
+    print("t_obs =", t_obs)
+    print("delta", delta)
 
     if alternative == "smaller":
         subset = np.where(ts <= t_obs)
