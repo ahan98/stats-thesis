@@ -2,7 +2,8 @@ import numpy as np
 import statsmodels.stats.api as sms
 
 
-def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
+def search(x1, x2, partitions, start, end,
+           alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
     """Returns the difference in means for which the corresponding permutation
     test outputs a p-value equal to alpha.
 
@@ -101,9 +102,6 @@ def pval(x1, x2, partitions, delta=0, pooled=True, alternative="two-sided"):
     x2s = combined[partitions[:,n1:]]
     ts = ttest_ind(x1s, x2s, n1, n2, pooled)
     t_obs = ttest_ind(x1, x2, n1, n2, pooled)
-    print("[pval]", x1, x2)
-    print("t_obs =", t_obs)
-    print("delta", delta)
 
     if alternative == "smaller":
         subset = np.where(ts <= t_obs)
