@@ -1,3 +1,6 @@
+import numpy as np
+from itertools import combinations
+
 def partition(n1, n2):
     """Returns all unique ways to arrange [0..n1+n2) into two groups of size n1 and n2.
 

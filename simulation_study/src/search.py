@@ -1,7 +1,7 @@
 from .perm_test import pval
 
 
-def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1):
+def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
     """Returns the difference in means for which the corresponding permutation
     test outputs a p-value equal to alpha.
 
@@ -37,8 +37,8 @@ def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1
 
     # Check that the p-values associated with delta = start and delta = end
     # are on opposite sides of alpha.
-    p_start = pval(x1, x2, partitions, delta=start)
-    p_end = pval(x1, x2, partitions, delta=end)
+    p_start = pval(x1, x2, partitions, delta=start, alternative=alternative)
+    p_end = pval(x1, x2, partitions, delta=end, alternative=alternative)
     # print("p_start =", p_start, ", p_end=", p_end)
     assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -50,7 +50,7 @@ def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1
         # print("iteration", i)
         delta = (start + end) / 2
         # print("delta =", delta, " in [", start, ",", end, "]")
-        p_new = pval(x1, x2, partitions, delta=delta)
+        p_new = pval(x1, x2, partitions, delta=delta, alternative=alternative)
         # print("p_new =", p_new)
         if p and percent_change(p, p_new) <= threshold:
             # (1) percent change is below threshold

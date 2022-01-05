@@ -2,7 +2,9 @@ import numpy as np
 import statsmodels.stats.api as sms
 
 
-def find_intervals(batch_size):
+# TODO documentation
+def find_intervals(batch_size, partitions, n1, n2, gamma1, gamma2,
+                   pooled=True, alternative="two-sided", save_intervals=False):
     intervals = []
     n_captured = 0
 
@@ -10,33 +12,105 @@ def find_intervals(batch_size):
         x1 = np.random.gamma(gamma1[0], gamma1[1], n1)
         x2 = np.random.gamma(gamma2[0], gamma2[1], n2)
 
-        # TODO accommodate different alternatives (i.e., lesser, greater, unequal)
-        # lesser  - alpha = 0.95
-        # greater - alpha = 0.05
-        # unequal - alpha_left = 0.025, alpha_right = 0.975
-        t99 = tconfint(0.001, pooled, x1, x2)
-        t90 = tconfint(0.20, pooled, x1, x2)
+        t99 = tconfint(0.001, x1, x2, pooled, alternative)
+        t90 = tconfint(0.20, x1, x2, pooled, alternative)
 
+        lower, upper = -np.inf, np.inf
         try:
-            lower = search(x1, x2, partitions, t99[0], t90[0])
-            upper = search(x1, x2, partitions, t90[1], t99[1])
+            if alternative != "smaller":
+                lower = search(x1, x2, partitions, t99[0], t90[0])
+            if alternative != "larger":
+                upper = search(x1, x2, partitions, t90[1], t99[1])
         except AssertionError:
             continue
 
-        intervals.append((lower, upper))
+        if save_intervals:
+            intervals.append((lower, upper))
         n_captured += (lower <= delta_true) * (delta_true <= upper)
 
-    return intervals, n_captured
+    if save_intervals:
+        return intervals, n_captured
+
+    return n_captured
+
+
+def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
+    """Returns the difference in means for which the corresponding permutation
+    test outputs a p-value equal to alpha.
+
+    This function performs a binary search on the interval [start, end]
+    corresponding to the (delta0, p_value) distribution.
+
+    Assumes that there exists delta in [start, end] such that pval(delta) = alpha.
+
+    Convergence criteria:
+    (1) The p-value from one iteration to the next has a percent change less than the desired
+        threshold.
+    (2) We have an approximation for delta0 such that the corresponding p-value is within
+        a desired margin of alpha.
+
+    Parameters
+    ----------
+    x1 : nd.array
+        Data for group 1
+    x2 : nd.array
+        Data for group 2
+    start : float
+        Initial lower bound for difference in means
+    end : float
+        Initial upper bound for difference in means
+
+    Returns
+    -------
+    float
+        The hypothesized true difference in population means.
+        The permutation test associated with this difference outputs a p-value
+        (approximately) equal to alpha.
+    """
+
+    # Check that the p-values associated with delta = start and delta = end
+    # are on opposite sides of alpha.
+    p_start = pval(x1, x2, partitions, delta=start, alternative=alternative)
+    p_end = pval(x1, x2, partitions, delta=end, alternative=alternative)
+    # print("p_start =", p_start, ", p_end=", p_end)
+    assert (p_start - alpha) * (p_end - alpha) <= 0
+
+    i = 0
+    p = p_new = delta = None
+    percent_change = lambda old, new : 100 * abs(new - old) / old
+
+    while True:
+        # print("iteration", i)
+        delta = (start + end) / 2
+        # print("delta =", delta, " in [", start, ",", end, "]")
+        p_new = pval(x1, x2, partitions, delta=delta, alternative=alternative)
+        # print("p_new =", p_new)
+        if p and percent_change(p, p_new) <= threshold:
+            # (1) percent change is below threshold
+            break
+
+        if p_new > alpha + margin:
+            start = delta
+        elif p_new < alpha - margin:
+            end = delta
+        else:
+            # (2) p-value is within margin of error
+            break
+
+        p = p_new
+        i += 1
+
+    return delta
 
 
 # TODO write custom version for performance purposes
 def tconfint(alpha, x1, x2, pooled=True, alternative="two-sided"):
     cm = sms.CompareMeans(sms.DescrStatsW(x1), sms.DescrStatsW(x2))
-    return cm.tconfint_diff(alpha, alternative, usevar="pooled" if pooled else "unequal")
+    return cm.tconfint_diff(alpha, alternative, usevar="pooled")
 
 
-# TODO finish documentation
-def pval(x1, x2, partitions, delta=0, pooled=True, alternative="unequal"):
+# TODO documentation
+def pval(x1, x2, partitions, delta=0, pooled=True, alternative="two-sided"):
     """ Returns the proportion of permutations with a test statistic
     "as or more extreme" (i.e., based on the alternative) than the observed
     test statistic.
@@ -59,9 +133,9 @@ def pval(x1, x2, partitions, delta=0, pooled=True, alternative="unequal"):
     t_obs = ttest_ind(x1, x2, n1, n2, pooled)
     #print("t_obs =", t_obs)
 
-    if alternative == "less":
+    if alternative == "smaller":
         subset = np.where(ts <= t_obs)
-    elif alternative == "greater":
+    elif alternative == "larger":
         subset = np.where(ts >= t_obs)
     else:
         subset = np.where((ts <= -abs(t_obs)) | (ts >= abs(t_obs)))
@@ -70,6 +144,7 @@ def pval(x1, x2, partitions, delta=0, pooled=True, alternative="unequal"):
     return p
 
 
+# TODO documentation
 def ttest_ind(x1s, x2s, n1, n2, pooled=True):
     #n1, n2 = x1s.shape[-1], x2s.shape[-1]
     #print("n1 =", n1, "n2 =", n2)
