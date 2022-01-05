@@ -2,15 +2,10 @@ import numpy as np
 import statsmodels.stats.api as sms
 
 
-def search(x1, x2, partitions, start, end,
-           alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
+def search(x1, x2, partitions, start, end, margin=0.005, threshold=1,
+           alpha=0.05, pooled=True, alternative="two-sided"):
     """Returns the difference in means for which the corresponding permutation
     test outputs a p-value equal to alpha.
-
-    This function performs a binary search on the interval [start, end]
-    corresponding to the (delta0, p_value) distribution.
-
-    Assumes that there exists delta in [start, end] such that pval(delta) = alpha.
 
     Convergence criteria:
     (1) The p-value from one iteration to the next has a percent change less than the desired
@@ -39,8 +34,8 @@ def search(x1, x2, partitions, start, end,
 
     # Check that the p-values associated with delta = start and delta = end
     # are on opposite sides of alpha.
-    p_start = pval(x1, x2, partitions, delta=start, alternative=alternative)
-    p_end = pval(x1, x2, partitions, delta=end, alternative=alternative)
+    p_start = pval(x1, x2, partitions, delta=start, pooled=pooled, alternative=alternative)
+    p_end = pval(x1, x2, partitions, delta=end, pooled=pooled, alternative=alternative)
     # print("p_start =", p_start, ", p_end=", p_end)
     assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -52,7 +47,7 @@ def search(x1, x2, partitions, start, end,
         # print("iteration", i)
         delta = (start + end) / 2
         # print("delta =", delta, " in [", start, ",", end, "]")
-        p_new = pval(x1, x2, partitions, delta=delta, alternative=alternative)
+        p_new = pval(x1, x2, partitions, delta=delta, pooled=pooled, alternative=alternative)
         # print("p_new =", p_new)
         if p and percent_change(p, p_new) <= threshold:
             # (1) percent change is below threshold
@@ -70,12 +65,6 @@ def search(x1, x2, partitions, start, end,
         i += 1
 
     return delta
-
-
-# TODO write custom version for performance purposes
-def tconfint(alpha, x1, x2, pooled=True, alternative="two-sided"):
-    cm = sms.CompareMeans(sms.DescrStatsW(x1), sms.DescrStatsW(x2))
-    return cm.tconfint_diff(alpha, alternative, usevar="pooled")
 
 
 # TODO documentation
