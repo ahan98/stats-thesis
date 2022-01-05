@@ -2,38 +2,6 @@ import numpy as np
 import statsmodels.stats.api as sms
 
 
-# TODO documentation
-def find_intervals(batch_size, partitions, n1, n2, gamma1, gamma2,
-                   pooled=True, alternative="two-sided", save_intervals=False):
-    intervals = []
-    n_captured = 0
-
-    for _ in range(batch_size):
-        x1 = np.random.gamma(gamma1[0], gamma1[1], n1)
-        x2 = np.random.gamma(gamma2[0], gamma2[1], n2)
-
-        t99 = tconfint(0.001, x1, x2, pooled, alternative)
-        t90 = tconfint(0.20, x1, x2, pooled, alternative)
-
-        lower, upper = -np.inf, np.inf
-        try:
-            if alternative != "smaller":
-                lower = search(x1, x2, partitions, t99[0], t90[0])
-            if alternative != "larger":
-                upper = search(x1, x2, partitions, t90[1], t99[1])
-        except AssertionError:
-            continue
-
-        if save_intervals:
-            intervals.append((lower, upper))
-        n_captured += (lower <= delta_true) * (delta_true <= upper)
-
-    if save_intervals:
-        return intervals, n_captured
-
-    return n_captured
-
-
 def search(x1, x2, partitions, start, end, alpha=0.05, margin=0.005, threshold=1, alternative="two-sided"):
     """Returns the difference in means for which the corresponding permutation
     test outputs a p-value equal to alpha.
@@ -156,8 +124,11 @@ def ttest_ind(x1s, x2s, n1, n2, pooled=True):
     mean2 = sum2 / n2
     #print("means", mean1, mean2)
 
-    var1 = np.var(x1s, ddof=1)
-    var2 = np.var(x2s, ddof=1)
+    # var1 = np.var(x1s, ddof=1)
+    # var2 = np.var(x2s, ddof=1)
+    sample_var = lambda x, mean, n: (np.sum(x**2, axis=-1) - n*mean**2) / (n-1)
+    var1 = sample_var(x1s, mean1, n1)
+    var2 = sample_var(x2s, mean2, n2)
     #print("sample variances", var1, var2)
 
     # http://www.stat.yale.edu/Courses/1997-98/101/meancomp.htm
