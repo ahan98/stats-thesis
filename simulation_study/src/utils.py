@@ -17,20 +17,6 @@ def partition(n1, n2):
         A numpy array of size NxM, where N = n1 + n2, and M = choose(N, n1)
     """
     N = n1 + n2
-
-    def get_groups(idxs):
-        i = 0
-        idxs2 = []
-        for j in idxs:
-            while i < N and i < j:
-                idxs2.append(i)
-                i += 1
-
-            if i == j:
-                i += 1
-
-        idxs2 += range(i, N)
-        return list(idxs) + idxs2
-
-    partitions = np.array([get_groups(idxs) for idxs in combinations(range(N), n1)])
-    return partitions
+    x1_idxs = list(combinations(range(N), n1))
+    x2_idxs = list(combinations(range(N), n2))[::-1]
+    return np.hstack((x1_idxs, x2_idxs))
