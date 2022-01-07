@@ -7,11 +7,12 @@ def search(x1, x2, partitions, start, end, margin=0.005, threshold=1,
     """Returns the difference in means for which the corresponding permutation
     test outputs a p-value equal to alpha.
 
-    Convergence criteria:
-    (1) The p-value from one iteration to the next has a percent change less than the desired
-        threshold.
-    (2) We have an approximation for delta0 such that the corresponding p-value is within
-        a desired margin of alpha.
+    This method performs a binary search to locate the difference in means,
+    using `start` and `end` as initial guesses, and converges when either
+    of the following occurs:
+    (1) The corresponding p-values between consecutive iterations changes by
+        at most `threshold` percent.
+    (2) The corresponding p-value is within `margin` of `alpha`.
 
     Parameters
     ----------
@@ -27,16 +28,16 @@ def search(x1, x2, partitions, start, end, margin=0.005, threshold=1,
     Returns
     -------
     float
-        The hypothesized true difference in population means.
-        The permutation test associated with this difference outputs a p-value
-        (approximately) equal to alpha.
+        The difference in the two population means corresponding to
+        a p-value (approximately) equal to alpha.
     """
 
-    # Check that the p-values associated with delta = start and delta = end
-    # are on opposite sides of alpha.
     p_start = pval(x1, x2, partitions, delta=start, pooled=pooled, alternative=alternative)
     p_end = pval(x1, x2, partitions, delta=end, pooled=pooled, alternative=alternative)
     # print("p_start =", p_start, ", p_end=", p_end)
+
+    # Check that the p-values corresponding to `start` and `end` are on
+    # opposite sides of `alpha`. Otherwise, the binary search will not converge.
     assert (p_start - alpha) * (p_end - alpha) <= 0
 
     i = 0
@@ -67,10 +68,9 @@ def search(x1, x2, partitions, start, end, margin=0.005, threshold=1,
     return delta
 
 
-# TODO documentation
 def pval(x1, x2, partitions, delta=0, pooled=True, alternative="two-sided"):
     """ Returns the proportion of permutations with a test statistic
-    "as or more extreme" (i.e., based on the alternative) than the observed
+    "as or more extreme" (based on the alternative) than the observed
     test statistic.
 
     Parameters
