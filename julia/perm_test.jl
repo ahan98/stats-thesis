@@ -2,8 +2,9 @@ using Statistics, HypothesisTests, Distributions
 include("partition.jl")
 
 
-function permInterval(x1, x2; pooled=true, alpha=0.05, alternative="two-sided")
-    n1, n2 = length(x1), length(x2)
+function permInterval(data, n1, n2; pooled=true, alpha=0.05, alternative="two-sided")
+    x1 = data[1:n1]
+    x2 = data[n1+1:n1+n2]
     parts = partition(n1, n2)
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
@@ -15,7 +16,7 @@ end
 
 # TODO documentation
 function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-sided",
-                margin=0.005, threshold = 1, alpha=0.05)
+                margin=0.005, threshold = 5, alpha=0.05)
     """Returns delta s.t. pval(delta) ~= alpha
     """
 
@@ -36,8 +37,7 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
         p_new = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=delta)
 
         if !isnothing(p) && percent_change(p, p_new) <= threshold
-            # (1) percent change is below threshold
-            break
+            break  # (1) percent change in p-value is below `threshold`
         end
 
         if p_new > alpha + margin
@@ -45,7 +45,7 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
         elseif p_new < alpha + margin
             stop = delta
         else
-            break
+            break  # (2) p-value is within `margin` of `alpha`
         end
 
         p = p_new
@@ -83,12 +83,12 @@ function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
         or more extreme than the test statistic for the original pair.
     """
 
-    x1_shifted = x1 .- delta
-    combined = vcat(x1_shifted, x2)               # shift group 1 under null hypothesis
+    x1 = x1 .- delta               # shift group 1 under null hypothesis
+    combined = vcat(x1, x2)        # join original pair into single vector
     x1s = combined[partitions[1]]  # get all combinations of pairs from original pair
     x2s = combined[partitions[2]]
 
-    t_obs = ttest_ind(x1_shifted, x2, pooled)  # test statistic for observed data
+    t_obs = ttest_ind(x1, x2, pooled)  # test statistic for observed data
     ts = ttest_ind(x1s, x2s, pooled)   # test statistic for all possible pairs of samples
 
     if alternative == "smaller"
@@ -123,7 +123,7 @@ function ttest_ind(x1s, x2s, pooled)
     Matrix{Float64}
         Sx1 matrix where the i-th entry denotes the t test statistic for the i-th pair.
     """
-    d = ndims(x1s)  # if 1D vector, sum normally, if 2D matrix, sum across rows
+    d = ndims(x1s)  # if 1D vector, compute by column, if 2D matrix, compute by row
 
     mean1 = mean(x1s, dims=d)
     var1 = var(x1s, mean=mean1, dims=d)

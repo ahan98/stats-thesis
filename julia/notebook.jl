@@ -19,6 +19,9 @@ using Distributions
 # ╔═╡ f46beb3f-af89-47aa-86b1-ed5a0ee72567
 using Random
 
+# ╔═╡ fe2b3f1a-f1ed-4521-be7f-25b8b064e85e
+using Threads
+
 # ╔═╡ 34de71b9-6669-4884-9571-65bb9841100d
 include("perm_test.jl"); include("partition.jl")
 
@@ -451,5 +454,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═4205e09e-00cc-4c90-aef6-7db20f0a6dcf
 # ╠═42890f0a-495a-4c08-ba18-814a38c1a0af
 # ╠═914a8ce2-6834-4f9d-9012-a27683c6c1c2
+# ╠═fe2b3f1a-f1ed-4521-be7f-25b8b064e85e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
