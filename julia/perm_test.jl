@@ -1,10 +1,11 @@
 using Statistics, HypothesisTests, Distributions
+using Distributed
 include("partition.jl")
 
 
 function permInterval(data, n1, n2; pooled=true, alpha=0.05, alternative="two-sided")
     x1 = data[1:n1]
-    x2 = data[n1+1:n1+n2]
+    x2 = data[n1+1:end]
     parts = partition(n1, n2)
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
