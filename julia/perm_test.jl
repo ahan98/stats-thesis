@@ -5,8 +5,8 @@ include("partition.jl")
 function permInterval(x1, x2; pooled=true, alpha=0.05, alternative="two-sided")
     n1, n2 = length(x1), length(x2)
     parts = partition(n1, n2)
-    wide_lo, wide_hi = tconf(x1, x2, alpha=0.001, pooled=pooled)
-    narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.2, pooled=pooled)
+    wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
+    narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
     lo = search(x1, x2, parts, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
     hi = search(x1, x2, parts, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
     return (lo, hi)
@@ -28,7 +28,10 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
     p = p_new = delta = nothing
     percent_change = (old, new) -> 100 * abs(new-old) / old
 
+    # i = 0
     while true
+        # i += 1
+        # println("iteration ", i)
         delta = (start + stop) / 2
         p_new = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=delta)
 
@@ -82,23 +85,21 @@ function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
 
     x1_shifted = x1 .- delta
     combined = vcat(x1_shifted, x2)               # shift group 1 under null hypothesis
-    x1s = [combined[i] for i in partitions[:, 1]]  # get all combinations of pairs from original pair
-    x2s = [combined[i] for i in partitions[:, 2]]
-    x1s = hcat(x1s...)'                            # convert vector of vectors to 2D matrix
-    x2s = hcat(x2s...)'
+    x1s = combined[partitions[1]]  # get all combinations of pairs from original pair
+    x2s = combined[partitions[2]]
 
     t_obs = ttest_ind(x1_shifted, x2, pooled)  # test statistic for observed data
     ts = ttest_ind(x1s, x2s, pooled)   # test statistic for all possible pairs of samples
 
     if alternative == "smaller"
-        n_extreme = sum(ts .<= t_obs)
+        n_extreme = count(ts .<= t_obs)
     elseif alternative == "larger"
-        n_extreme = sum(ts .>= t_obs)
+        n_extreme = count(ts .>= t_obs)
     else
-        n_extreme = sum(@. (ts <= -abs(t_obs)) || (ts >= abs(t_obs)))
+        n_extreme = count(@. (ts <= -abs(t_obs)) || (ts >= abs(t_obs)))
     end
 
-    return n_extreme / size(partitions)[1]  # proportion of pairs w/ extreme test statistic
+    return n_extreme / size(partitions[1])[1]  # proportion of pairs w/ extreme test statistic
 end
 
 
