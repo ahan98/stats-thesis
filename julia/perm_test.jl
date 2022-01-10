@@ -3,15 +3,12 @@ using Distributed
 include("partition.jl")
 
 
-function permInterval(data, n1, n2; pooled=true, alpha=0.05, alternative="two-sided")
-    x1 = data[1:n1]
-    x2 = data[n1+1:end]
-    parts = partition(n1, n2)
+function permInterval(x1, x2, partitions, delta_true; pooled=true, alpha=0.05, alternative="two-sided")
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
-    lo = search(x1, x2, parts, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
-    hi = search(x1, x2, parts, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
-    return (lo, hi)
+    lo = search(x1, x2, partitions, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
+    hi = search(x1, x2, partitions, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
+    return lo <= delta_true <= hi
 end
 
 
@@ -97,7 +94,7 @@ function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
     elseif alternative == "larger"
         n_extreme = count(ts .>= t_obs)
     else
-        n_extreme = count(@. (ts <= -abs(t_obs)) || (ts >= abs(t_obs)))
+        n_extreme = count(@. (ts <= -abs(t_obs)) | (ts >= abs(t_obs)))
     end
 
     return n_extreme / size(partitions[1])[1]  # proportion of pairs w/ extreme test statistic
@@ -148,18 +145,18 @@ end
 # TODO documentation
 # TODO this is similar to ttest_ind() so organize code?
 function tconf(x1, x2; pooled=true, alpha=0.05)
-	n1, n2 = length(x1), length(x2)
-	if pooled
-		dof = n1 + n2 - 1
-		var1 = var2 = ((n1-1)*var(x1) + (n2-2)*var(x2)) / (n1+n2-2)
-	else
-		dof = min(n1, n2) - 1
-		var1, var2 = var(x1), var(x2)
-	end
+    n1, n2 = length(x1), length(x2)
+    if pooled
+        dof = n1 + n2 - 1
+        var1 = var2 = ((n1-1)*var(x1) + (n2-2)*var(x2)) / (n1+n2-2)
+    else
+        dof = min(n1, n2) - 1
+        var1, var2 = var(x1), var(x2)
+    end
 
-	t = TDist(dof)
-	tcrit = quantile(t, 1-(alpha/2))
-	margin = tcrit * sqrt(var1/n1 + var2/n2)
-	diff = mean(x1) - mean(x2)
-	return (diff - margin, diff + margin)
+    t = TDist(dof)
+    tcrit = quantile(t, 1-(alpha/2))
+    margin = tcrit * sqrt(var1/n1 + var2/n2)
+    diff = mean(x1) - mean(x2)
+    return (diff - margin, diff + margin)
 end
