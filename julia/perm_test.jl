@@ -1,27 +1,91 @@
 using Statistics, HypothesisTests, Distributions
 using Distributed
-include("partition.jl")
 
 
 function permInterval(x1, x2, partitions, delta_true; pooled=true, alpha=0.05, alternative="two-sided")
+    """Returns true (false) if permutation test confidence interval does (not) include difference in
+    population means.
+
+    Parameters
+    ----------
+    x1 : Vector{Float64}
+        Data for group 1
+    x2 : Vector{Float64}
+        Data for group 2
+    partitions : Tuple{Matrix{Int64}, Matrix{Int64}}
+        The i-th rows of x1[partitions[1]] and x2[partitions[2]] denote the i-th arrangement of
+        the original (n1+n2) observations into two groups of size n1 and n2.
+    delta_true : Float64
+        Difference in population means
+    pooled : Bool
+        Assume pooled or unpooled variances
+    alpha : Float64
+        Significance level
+    alternative : String
+        Type of alternative hypothesis ("two-sided", "smaller", "larger")
+
+    Returns
+    -------
+    Bool
+        True (false) if permutation test confidence interval does (not) include difference in population means.
+    """
+
+    # provide estimates of permutation test CI using t-test CIs
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
+    # use binary search to find approximate permutation test confidence interval
     lo = search(x1, x2, partitions, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
     hi = search(x1, x2, partitions, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
     return lo <= delta_true <= hi
 end
 
 
-# TODO documentation
 function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-sided",
-                margin=0.005, threshold = 5, alpha=0.05)
-    """Returns delta s.t. pval(delta) ~= alpha
-    """
+                margin=0.005, threshold = 5.0, alpha=0.05)
+    """Returns the difference in means for which the corresponding permutation
+    test has a p-value approximately equal to alpha.
 
+    This method returns the value for delta such that
+    pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=delta) ~= alpha
+
+    This method performs a binary search for delta in [start, stop], converging if one
+    of the following occurs:
+    (1) The percent change between the last two p-values is at most `threshold`.
+    (2) The newest p-value is within `margin` of `alpha`.
+
+    Parameters
+    ----------
+    x1 : Vector{Float64}
+        Data for group 1
+    x2 : Vector{Float64}
+        Data for group 2
+    partitions : Tuple{Matrix{Int64}, Matrix{Int64}}
+        Each row of the first/second matrix contains the indexes of the original n1+n2 elements
+        denoting each arrangement of the first/second group.
+    start : Float64
+        Initial lower estimate of delta
+    stop : Float64
+        Initial upper estimate of delta
+    pooled : Bool
+        Assume pooled or unpooled variances
+    alternative : String
+        Type of alternative hypothesis ("two-sided", "smaller", "larger")
+    margin : Float64
+        search() terminates if the newest p-value is within `margin` of `alpha`
+    threshold : Float64
+        search() terminates if the newest p-value is within `threshold` percent of the last p-value
+    alpha : Float64
+        Significance level
+
+    Returns
+    -------
+    float
+        The difference in the two population means corresponding to
+        a p-value (approximately) equal to alpha.
+    """
     p_start = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=start)
     p_end = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=stop)
-    # Check that the p-values corresponding to `start` and `stop` are on
-    # opposite sides of `alpha`. Otherwise, the binary search will not converge.
+    # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
     p = p_new = delta = nothing
@@ -54,19 +118,19 @@ end
 
 
 function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
-    """Returns the proportion of permutations with a test statistic
-    as or more extreme than the observed test statistic (based on the alternative).
+    """Returns the permutation test p-value, i.e., the proportion of permutations
+    (of the original n1+n2 observations into two groups of size n1 and n2) which have
+    a test statistic as or more extreme than the observed test statistic.
 
     Parameters
     ----------
-    x1 : Vector{Int}
+    x1 : Vector{Int64}
         Data for group 1
-    x2 : Vector{Int}
+    x2 : Vector{Int64}
         Data for group 2
-    partitions : Matrix{Vector{Int64}}
-        The i-th row is a pair of vectors denoting the indexes of the elements
-        (from the pair of original samples concatenated together) in each
-        possible pair of samples
+    partitions : Tuple{Matrix{Int64}, Matrix{Int64}}
+        Each row of the first/second matrix contains the indexes of the original n1+n2 elements
+        denoting each arrangement of the first/second group.
     pooled : Bool
         Assume pooled or unpooled variances
     alternative : String
@@ -142,9 +206,28 @@ function ttest_ind(x1s, x2s, pooled)
 end
 
 
-# TODO documentation
-# TODO this is similar to ttest_ind() so organize code?
+# TODO consider merging with ttest_ind()
 function tconf(x1, x2; pooled=true, alpha=0.05)
+    """Returns (1-alpha)% t-test confidence interval for the difference in means.
+
+    Reference: http://www.stat.yale.edu/Courses/1997-98/101/meancomp.htm
+
+    Parameters
+    ----------
+    x1 : Vector{Int64}
+        Data for group 1
+    x2 : Vector{Int64}
+        Data for group 2
+    pooled : Bool
+        Assume pooled (equal) or unpooled (unequal) variances
+    alpha : Float64
+        Significance level
+
+    Returns
+    -------
+    Tuple{Float64, Float64}
+        (1-alpha)% t-test confidence interval for the difference in means
+    """
     n1, n2 = length(x1), length(x2)
     if pooled
         dof = n1 + n2 - 1
