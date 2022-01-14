@@ -36,6 +36,7 @@ function permInterval(x1, x2, partitions, delta_true; pooled=true, alpha=0.05, a
     # use binary search to find approximate permutation test confidence interval
     lo = search(x1, x2, partitions, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
     hi = search(x1, x2, partitions, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
+    println("(", lo, ", ", hi, ")")
     return lo <= delta_true <= hi
 end
 
