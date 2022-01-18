@@ -2,7 +2,7 @@ using Statistics, HypothesisTests, Distributions
 using Distributed
 
 
-function permInterval(x1, x2, partitions, delta_true; pooled=true, alpha=0.05, alternative="two-sided")
+function permInterval(x1, x2, parts1, parts2, delta_true; pooled=true, alpha=0.05, alternative="two-sided")
     """Returns true (false) if permutation test confidence interval does (not) include difference in
     population means.
 
@@ -34,14 +34,14 @@ function permInterval(x1, x2, partitions, delta_true; pooled=true, alpha=0.05, a
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
     # use binary search to find approximate permutation test confidence interval
-    lo = search(x1, x2, partitions, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
-    hi = search(x1, x2, partitions, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
+    lo = search(x1, x2, parts1, parts2, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
+    hi = search(x1, x2, parts1, parts2, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
     println("(", lo, ", ", hi, ")")
     return lo <= delta_true <= hi
 end
 
 
-function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-sided",
+function search(x1, x2, parts1, parts2, start, stop; pooled=true, alternative="two-sided",
                 margin=0.005, threshold = 5.0, alpha=0.05)
     """Returns the difference in means for which the corresponding permutation
     test has a p-value approximately equal to alpha.
@@ -84,8 +84,8 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
         The difference in the two population means corresponding to
         a p-value (approximately) equal to alpha.
     """
-    p_start = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=start)
-    p_end = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=stop)
+    p_start = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=start)
+    p_end = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=stop)
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -97,7 +97,7 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
         # i += 1
         # println("iteration ", i)
         delta = (start + stop) / 2
-        p_new = pval(x1, x2, partitions, pooled=pooled, alternative=alternative, delta=delta)
+        p_new = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=delta)
 
         if !isnothing(p) && percent_change(p, p_new) <= threshold
             break  # (1) percent change in p-value is below `threshold`
@@ -118,7 +118,7 @@ function search(x1, x2, partitions, start, stop; pooled=true, alternative="two-s
 end
 
 
-function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
+function pval(x1, x2, parts1, parts2; alternative="two-sided", delta=0)
     """Returns the permutation test p-value, i.e., the proportion of permutations
     (of the original n1+n2 observations into two groups of size n1 and n2) which have
     a test statistic as or more extreme than the observed test statistic.
@@ -148,8 +148,8 @@ function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
 
     x1 = x1 .- delta               # shift group 1 under null hypothesis
     combined = vcat(x1, x2)        # join original pair into single vector
-    x1s = combined[partitions[1]]  # get all combinations of pairs from original pair
-    x2s = combined[partitions[2]]
+    x1s = combined[parts1]  # get all combinations of pairs from original pair
+    x2s = combined[parts2]
 
     t_obs = ttest_ind(x1, x2, pooled)  # test statistic for observed data
     ts = ttest_ind(x1s, x2s, pooled)   # test statistic for all possible pairs of samples
@@ -162,7 +162,7 @@ function pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=0)
         n_extreme = count(@. (ts <= -abs(t_obs)) | (ts >= abs(t_obs)))
     end
 
-    return n_extreme / size(partitions[1])[1]  # proportion of pairs w/ extreme test statistic
+    return n_extreme / size(parts1)[1]  # proportion of pairs w/ extreme test statistic
 end
 
 
