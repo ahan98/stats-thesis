@@ -33,16 +33,18 @@ function permInterval(x1, x2, parts1, parts2, delta_true; pooled=true, alpha=0.0
     # provide estimates of permutation test CI using t-test CIs
     wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
     narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
+    # println(wide_lo, " ", wide_hi)
+    # println(narrow_lo, " ", narrow_hi)
     # use binary search to find approximate permutation test confidence interval
     lo = search(x1, x2, parts1, parts2, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
     hi = search(x1, x2, parts1, parts2, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
-    println("(", lo, ", ", hi, ")")
+    # println("(", lo, ", ", hi, ")")
     return lo <= delta_true <= hi
 end
 
 
 function search(x1, x2, parts1, parts2, start, stop; pooled=true, alternative="two-sided",
-                margin=0.005, threshold = 5.0, alpha=0.05)
+                margin=0.005, threshold=1.0, alpha=0.05)
     """Returns the difference in means for which the corresponding permutation
     test has a p-value approximately equal to alpha.
 
@@ -86,6 +88,7 @@ function search(x1, x2, parts1, parts2, start, stop; pooled=true, alternative="t
     """
     p_start = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=start)
     p_end = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=stop)
+    # println("p_start = ", p_start, ", p_end = ", p_end)
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -118,7 +121,7 @@ function search(x1, x2, parts1, parts2, start, stop; pooled=true, alternative="t
 end
 
 
-function pval(x1, x2, parts1, parts2; alternative="two-sided", delta=0)
+function pval(x1, x2, parts1, parts2; pooled=false, alternative="two-sided", delta=0)
     """Returns the permutation test p-value, i.e., the proportion of permutations
     (of the original n1+n2 observations into two groups of size n1 and n2) which have
     a test statistic as or more extreme than the observed test statistic.
@@ -146,12 +149,13 @@ function pval(x1, x2, parts1, parts2; alternative="two-sided", delta=0)
         or more extreme than the test statistic for the original pair.
     """
 
-    x1 = x1 .- delta               # shift group 1 under null hypothesis
-    combined = vcat(x1, x2)        # join original pair into single vector
-    x1s = combined[parts1]  # get all combinations of pairs from original pair
-    x2s = combined[parts2]
+    x1_shifted = x1 .- delta             # shift group 1 under null hypothesis
+    t_obs = ttest_ind(x1_shifted, x2, pooled)  # test statistic for observed data
+    # println(t_obs)
 
-    t_obs = ttest_ind(x1, x2, pooled)  # test statistic for observed data
+    combined = vcat(x1_shifted, x2)  # join original pair into single vector
+    x1s = combined[parts1]   # get all combinations of pairs from original pair
+    x2s = combined[parts2]
     ts = ttest_ind(x1s, x2s, pooled)   # test statistic for all possible pairs of samples
 
     if alternative == "smaller"
@@ -231,8 +235,8 @@ function tconf(x1, x2; pooled=true, alpha=0.05)
     """
     n1, n2 = length(x1), length(x2)
     if pooled
-        dof = n1 + n2 - 1
-        var1 = var2 = ((n1-1)*var(x1) + (n2-2)*var(x2)) / (n1+n2-2)
+        dof = n1 + n2 - 2
+        var1 = var2 = ((n1-1)*var(x1) + (n2-2)*var(x2)) / dof
     else
         dof = min(n1, n2) - 1
         var1, var2 = var(x1), var(x2)
