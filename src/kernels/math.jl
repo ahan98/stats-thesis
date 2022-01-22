@@ -129,48 +129,6 @@ end
 
 """ array-array (in-place) """
 
-function add_arr!(out, x, y)
-    """ x .+= val """
-    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
-    stride = blockDim().x * gridDim().x                       # num. threads per block
-    for i = tidx:stride:length(out)
-        @inbounds out[i] = x[i] + y[i]
-    end
-    return
-end
-
-function sub_arr!(out, x, y)
-    """ x .+= val """
-    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
-    stride = blockDim().x * gridDim().x                       # num. threads per block
-    for i = tidx:stride:length(out)
-        @inbounds out[i] = x[i] - y[i]
-    end
-    return
-end
-
-function mul_arr!(out, x, y)
-    """ x .+= val """
-    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
-    stride = blockDim().x * gridDim().x                       # num. threads per block
-    for i = tidx:stride:length(out)
-        @inbounds out[i] = x[i] * y[i]
-    end
-    return
-end
-
-function div_arr!(out, x, y)
-    """ x .+= val """
-    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
-    stride = blockDim().x * gridDim().x                       # num. threads per block
-    for i = tidx:stride:length(out)
-        @inbounds out[i] = x[i] / y[i]
-    end
-    return
-end
-
-""" array-array (in-place) """
-
 function add_arr!(out, x)
     """ x .+= val """
     tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
