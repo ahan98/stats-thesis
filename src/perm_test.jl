@@ -1,4 +1,5 @@
 module PermTest
+export ttest_ind
 
 using Statistics, HypothesisTests, Distributions
 using Distributed

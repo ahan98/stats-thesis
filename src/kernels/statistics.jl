@@ -1,8 +1,10 @@
-module PermTestFast
+module PermTestCUDA
+
 export pval, t
 
 using CUDA
-include("utils.jl")
+include("../utils.jl")
+include("math.jl")
 
 function pval(x, y, px, py; pooled=false, alternative="two-sided", delta=0)
     x_shift = x .- delta
@@ -28,7 +30,7 @@ function t(x, y, pooled)
     varx, meanx = var_gpu(x)
     vary, meany = var_gpu(y)
     nx, ny = size(x, 2), size(y, 2)
-    T, B = set_thread_block(size(x,1))
+    # T, B = Utils.set_thread_block(size(x,1))
     
     if pooled
         # TODO
@@ -42,7 +44,7 @@ end
 
 function var_gpu(x)
     nrow, ncol = size(x)
-    T, B = set_thread_block(nrow)
+    T, B = Utils.set_thread_block(nrow)
     ss = CUDA.zeros(Float64, size(x)[1])
     @cuda threads=T blocks=B sumsq!(x, ncol, ss)
 
@@ -62,8 +64,9 @@ end
 
 """ Mean """
 
-function row_mean!(x, ncol, out)
+function row_mean!(x, out)
     """out = sum(x, dims=2)"""
+    nrow, ncol = size(x)
     row_idx = (blockIdx().x-1) * blockDim().x + threadIdx().x
     for i = 1:ncol
         @inbounds out[row_idx] += x[row_idx, i]
