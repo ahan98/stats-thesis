@@ -1,3 +1,5 @@
+module PermTest
+
 using Statistics, HypothesisTests, Distributions
 using Distributed
 
@@ -248,3 +250,5 @@ function tconf(x1, x2; pooled=true, alpha=0.05)
     diff = mean(x1) - mean(x2)
     return (diff - margin, diff + margin)
 end
+
+end  # module
