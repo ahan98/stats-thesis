@@ -1,4 +1,5 @@
 using CUDA
+include("../utils.jl")
 
 """ array-scalar """
 
@@ -206,6 +207,42 @@ function div_arr!(out, x)
     stride = blockDim().x * gridDim().x                       # num. threads per block
     for i = tidx:stride:length(out)
         @inbounds out[i] /= x[i]
+    end
+    return
+end
+
+""" 2-D Matrix """
+
+function row_sum!(out, x)
+    """ x .+= val """
+    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
+    stride = blockDim().x * gridDim().x                       # num. threads per block
+    for r = tidx:stride:size(x,1)
+        for c = 1:size(x,2)
+            @inbounds out[r] += x[r,c]
+	end
+    end
+    return
+end
+
+""" Element-wise (in-place) """
+
+function sqrt!(out)
+    """ x .+= val """
+    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
+    stride = blockDim().x * gridDim().x                       # num. threads per block
+    for i = tidx:stride:length(out)
+        @inbounds out[i] = sqrt(out[i])
+    end
+    return
+end
+
+function square!(out)
+    """ x .+= val """
+    tidx = (blockIdx().x - 1) * blockDim().x + threadIdx().x  # thread index
+    stride = blockDim().x * gridDim().x                       # num. threads per block
+    for i = tidx:stride:length(out)
+        @inbounds out[i] = out[i]^2
     end
     return
 end

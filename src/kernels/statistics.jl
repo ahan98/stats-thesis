@@ -1,6 +1,6 @@
 module PermTestCUDA
 
-export pval, t
+export pval, t, var
 
 using CUDA
 include("../utils.jl")
@@ -26,64 +26,69 @@ function pval(x, y, px, py; pooled=false, alternative="two-sided", delta=0)
     return n_extreme / size(px, 1)  # proportion of pairs w/ extreme test statistic
 end
 
+
 function t(x, y, pooled)
-    varx, meanx = var_gpu(x)
-    vary, meany = var_gpu(y)
+    varx, meanx = var(x)
+    vary, meany = var(y)
     nx, ny = size(x, 2), size(y, 2)
-    # T, B = Utils.set_thread_block(size(x,1))
+    T, B = Utils.set_thread_block(size(x,1))
     
     if pooled
         # TODO
     end
-    
-    return @. (meanx - meany) / sqrt(varx/nx + vary/ny)
+
+    # return @. (meanx - meany) / sqrt(varx/nx + vary/ny)
+
+    @cuda threads=T blocks=B sub_arr!(meanx, meany)  # meanx .-= meany
+
+    @cuda threads=T blocks=B div!(varx, nx)
+    @cuda threads=T blocks=B div!(vary, ny)
+    @cuda threads=T blocks=B add_arr!(varx, vary)
+    @cuda threads=T blocks=B sqrt!(varx)
+    @cuda threads=T blocks=B div_arr!(meanx, varx)
+    return meanx
 end
 
 
-""" Variance """
+function var(x)
+    ss = _row_sum_sq(x)
+    means = mean(x)
 
-function var_gpu(x)
-    nrow, ncol = size(x)
-    T, B = Utils.set_thread_block(nrow)
-    ss = CUDA.zeros(Float64, size(x)[1])
-    @cuda threads=T blocks=B sumsq!(x, ncol, ss)
+    nsamples, sample_size = size(x)
+    T, B = Utils.set_thread_block(nsamples)
 
-    means = CUDA.zeros(Float64, nrow)
-    @cuda threads=T blocks=B row_mean!(x, ncol, means)
+    # (sum(x.^2, dims=2) .- (sample_size .* means.^2)) / (sample_size - 1)
+    temp = copy(means)
+    @cuda threads=T blocks=B square!(temp)
+    @cuda threads=T blocks=B mul!(temp, sample_size)
+    @cuda threads=T blocks=B sub_arr!(ss, temp)
+    @cuda threads=T blocks=B div!(ss, sample_size - 1)  
 
-    vars = CUDA.zeros(Float64, nrow)
-    @cuda threads=T blocks=B _var!(ncol, ss, means, vars)
-    return vars, means
+    return ss, means
 end
 
-function _var!(n, ss, means, out)
-    i = (blockIdx().x-1) * blockDim().x + threadIdx().x
-    @inbounds out[i] = (ss[i] - (n * means[i]^2)) / (n-1)
-    return
-end
 
-""" Mean """
-
-function row_mean!(x, out)
+function mean(x)
     """out = sum(x, dims=2)"""
-    nrow, ncol = size(x)
-    row_idx = (blockIdx().x-1) * blockDim().x + threadIdx().x
-    for i = 1:ncol
-        @inbounds out[row_idx] += x[row_idx, i]
-    end
-    @inbounds out[row_idx] /= ncol
-    return
+    T, B = Utils.set_thread_block(size(x, 1))
+    out = CUDA.zeros(size(x,1))
+    @cuda threads=T blocks=B row_sum!(out, x)       # sum across each row of x, and store in out
+    @cuda threads=T blocks=B div!(out, size(x, 2))  # divide each row sum by row length
+    return out
 end
 
-""" Misc. """
 
-function sumsq!(x, ncol, out)
-    """out = sum(x, dims=2)"""
-    row_idx = (blockIdx().x-1) * blockDim().x + threadIdx().x
-    for i = 1:ncol
-        @inbounds out[row_idx] += x[row_idx, i]^2
-    end
-    return
+function _row_sum_sq(x)
+    out = CUDA.zeros(size(x,1))
+    temp = copy(x)
+
+    T, B = Utils.set_thread_block(length(x))
+    @cuda threads=T blocks=B square!(temp)        # square each element
+
+    T, B = Utils.set_thread_block(size(x, 1))
+    @cuda threads=T blocks=B row_sum!(out, temp)  # sum across each row
+
+    return out
 end
 
-end  # module
+end

@@ -1,4 +1,4 @@
-using CUDA, BenchmarkTools, Test, Random
+using CUDA, BenchmarkTools, Test, Random, Statistics
 include("../src/kernels/statistics.jl")
 include("../src/perm_test.jl")
 include("../src/utils.jl")
@@ -14,6 +14,18 @@ include("../src/utils.jl")
         gpu = PermTestCUDA.t(x', y', false)
         @test isapprox(cpu, gpu)
     end
+
+    # @testset "pooled=true" begin
+    #     # TODO
+    # end
+end
+
+@testset "variance & mean" begin
+    x = CUDA.rand(Float64, 1000, 500)
+    target = (var(x, dims=2), mean(x, dims=2))
+    v, m = PermTestCUDA.var(x)
+    @test isapprox(v, target[1])
+    @test isapprox(m, target[2])
 end
 
 # @testset "Permutation test p-value" begin
