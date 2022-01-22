@@ -39,30 +39,28 @@ function t(x, y, pooled)
         # TODO
     end
 
-    # return @. (meanx - meany) / sqrt(varx/nx + vary/ny)
-
-    @cuda threads=T blocks=B sub_arr!(meanx, meany)  # meanx .-= meany
-
+    # @. (meanx - meany) / sqrt(varx/nx + vary/ny)
     @cuda threads=T blocks=B div!(varx, nx)
     @cuda threads=T blocks=B div!(vary, ny)
     @cuda threads=T blocks=B add_arr!(varx, vary)
     @cuda threads=T blocks=B sqrt!(varx)
+    @cuda threads=T blocks=B sub_arr!(meanx, meany)
     @cuda threads=T blocks=B div_arr!(meanx, varx)
     return meanx
 end
 
 
 function var(x)
-    ss = _row_sum_sq(x)
-    means = mean(x)
-
     nsamples, sample_size = size(x)
     T, B = Utils.set_thread_block(nsamples)
 
     # (sum(x.^2, dims=2) .- (sample_size .* means.^2)) / (sample_size - 1)
+    means = mean(x)
     temp = copy(means)
     @cuda threads=T blocks=B square!(temp)
     @cuda threads=T blocks=B mul!(temp, sample_size)
+
+    ss = _row_sum_sq(x)
     @cuda threads=T blocks=B sub_arr!(ss, temp)
     @cuda threads=T blocks=B div!(ss, sample_size - 1)  
 

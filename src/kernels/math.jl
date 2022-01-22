@@ -178,7 +178,7 @@ function row_sum!(out, x)
     for r = tidx:stride:size(x,1)
         for c = 1:size(x,2)
             @inbounds out[r] += x[r,c]
-	end
+        end
     end
     return
 end
