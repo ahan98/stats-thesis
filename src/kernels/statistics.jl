@@ -7,10 +7,12 @@ include("../utils.jl")
 include("math.jl")
 
 function pval(x, y, px, py; pooled=false, alternative="two-sided", delta=0)
-    x_shift = x .- delta
-    t_obs = t(x_shift', y', pooled)  # test statistic for observed data
+    T, B = Utils.set_thread_block(size(x,1))
+    @cuda threads=T blocks=B sub!(x, delta)
+    
+    t_obs = t(x', y', pooled)  # test statistic for observed data
 
-    combined = vcat(x_shift, y)  # join original pair into single vector
+    combined = vcat(x, y)  # join original pair into single vector
     @inbounds xs = combined[px]   # get all combinations of pairs from original pair
     @inbounds ys = combined[py]
     ts = t(xs, ys, pooled)   # test statistic for all possible pairs of samples
