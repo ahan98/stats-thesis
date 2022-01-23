@@ -10,16 +10,21 @@ DATA_TYPE = Float32
     px, py = Utils.partition(nx, ny)
 
     Random.seed!(1)
-    x = CuArray(rand(DATA_TYPE, nx))
-    y = CuArray(rand(DATA_TYPE, ny))
+    x = CuArray(randn(DATA_TYPE, nx))  # standard normal data with mean 0
+    y = CuArray(randn(DATA_TYPE, ny))
 
-    wide_lo, wide_hi = PermTest.tconf(x, y, alpha=0.001)
-    narrow_lo, narrow_hi = PermTest.tconf(x, y, alpha=0.2)
-
+    wide = PermTest.tconf(x, y, alpha=0.001)
+    narrow = PermTest.tconf(x, y, alpha=0.2)
     # println("lo: ", wide_lo, ", hi: ", narrow_lo)
-    # println(PermTestCUDA.search(x, y, px, py, wide_lo, narrow_lo, pooled=false))
-    @test isapprox(PermTest.search(x, y, px, py, wide_lo, narrow_lo, pooled=false),
-                   PermTestCUDA.search(x, y, px, py, wide_lo, narrow_lo, pooled=false))
+
+    @testset "search()" begin
+        @test isapprox(PermTest.search(x, y, px, py, wide[1], narrow[1], pooled=false),
+                       PermTestCUDA.search(x, y, px, py, wide[1], narrow[1], pooled=false))
+    end
+    
+    @testset "permInterval()" begin
+        @test PermTest.permInterval(x, y, px, py, 0) == PermTestCUDA.permInterval(x, y, px, py, 0, wide, narrow)
+    end
 end
 
 @testset "Permutation test p-value" begin
@@ -32,12 +37,10 @@ end
     x_copy = copy(x)
     y_copy = copy(y)
 
-    p1 = PermTestCUDA.pval(x, y, px, py)
     @test all(x .== x_copy)
     @test all(y .== y_copy)
-
-    # @test isapprox(PermTest.pval(x, y, px, py),
-    #                PermTestCUDA.pval(x, y, px, py))
+    @test isapprox(PermTest.pval(x, y, px, py),
+                   PermTestCUDA.pval(x, y, px, py))
 end
 
 @testset "t test statistic" begin
@@ -50,13 +53,11 @@ end
     y_copy = copy(y)
 
     @testset "pooled=false" begin
-        cpu = PermTest.ttest_ind(x, y, false)
-        gpu = PermTestCUDA.t(x', y', false)
-        @test isapprox(cpu, gpu)
+        @test isapprox(PermTest.ttest_ind(x, y, false),
+                       PermTestCUDA.t(x', y', false))
+        @test all(x .== x_copy)
+        @test all(y .== y_copy)
     end
-
-    @test all(x .== x_copy)
-    @test all(y .== y_copy)
 
     # @testset "pooled=true" begin
     #     # TODO
@@ -71,6 +72,6 @@ end
     v, m = PermTestCUDA.var(x)
     @test isapprox(v, target[1])
     @test isapprox(m, target[2])
-
     @test all(x .== x_copy)
 end
+

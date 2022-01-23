@@ -7,6 +7,18 @@ include("../utils.jl")
 include("math.jl")
 
 
+function permInterval(x, y, px, py, delta_true, wide, narrow;
+                      pooled=true, alpha=0.05, alternative="two-sided")
+    # println(wide_lo, " ", wide_hi)
+    # println(narrow_lo, " ", narrow_hi)
+    # use binary search to find approximate permutation test confidence interval
+    lo = search(x, y, px, py, wide[1], narrow[1], pooled=pooled, alpha=alpha, alternative=alternative)
+    hi = search(x, y, px, py, narrow[2], wide[2], pooled=pooled, alpha=alpha, alternative=alternative)
+    # println("(", lo, ", ", hi, ")")
+    return lo <= delta_true <= hi
+end
+
+
 function search(x, y, px, py, lo, hi; pooled=true, alternative="two-sided",
                 margin=0.005, threshold=1.0, alpha=0.05)
     # println(x)
