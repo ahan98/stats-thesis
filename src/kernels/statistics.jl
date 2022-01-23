@@ -1,6 +1,6 @@
 module PermTestCUDA
 
-export search, pval, t, var
+export permInterval, search, pval, t, var
 
 using CUDA
 include("../utils.jl")
@@ -12,6 +12,7 @@ function permInterval(x, y, px, py, delta_true, wide, narrow;
     # println(wide_lo, " ", wide_hi)
     # println(narrow_lo, " ", narrow_hi)
     # use binary search to find approximate permutation test confidence interval
+    # println("wide: (", wide[1], ", ", wide[2], ") narrow: (", narrow[1], ", ", narrow[2], ")")
     lo = search(x, y, px, py, wide[1], narrow[1], pooled=pooled, alpha=alpha, alternative=alternative)
     hi = search(x, y, px, py, narrow[2], wide[2], pooled=pooled, alpha=alpha, alternative=alternative)
     # println("(", lo, ", ", hi, ")")

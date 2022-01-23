@@ -34,8 +34,8 @@ function permInterval(x1, x2, parts1, parts2, delta_true; pooled=true, alpha=0.0
     """
 
     # provide estimates of permutation test CI using t-test CIs
-    wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)
-    narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)
+    wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)[1]
+    narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)[1]
     # println(wide_lo, " ", wide_hi)
     # println(narrow_lo, " ", narrow_hi)
     # use binary search to find approximate permutation test confidence interval
@@ -236,20 +236,23 @@ function tconf(x1, x2; pooled=true, alpha=0.05)
     Tuple{Float64, Float64}
         (1-alpha)% t-test confidence interval for the difference in means
     """
-    n1, n2 = length(x1), length(x2)
+    d1, d2 = ndims(x1), ndims(x2)
+    n1, n2 = size(x1, d1), size(x2, d2)
+    
     if pooled
         dof = n1 + n2 - 2
-        var1 = var2 = ((n1-1)*var(x1) + (n2-2)*var(x2)) / dof
+        var1 = var2 = ((n1-1).*var(x1, dims=d1) .+ (n2-2).*var(x2, dims=d2)) ./ dof
+        #var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
     else
         dof = min(n1, n2) - 1
-        var1, var2 = var(x1), var(x2)
+        var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
     end
 
     t = TDist(dof)
     tcrit = quantile(t, 1-(alpha/2))
-    margin = tcrit * sqrt(var1/n1 + var2/n2)
-    diff = mean(x1) - mean(x2)
-    return (diff - margin, diff + margin)
+    margin = @. tcrit * sqrt(var1/n1 + var2/n2)
+    diff = mean(x1, dims=d1) .- mean(x2, dims=d2)
+    return vcat(zip(diff .- margin, diff .+ margin)...)
 end
 
 end  # module

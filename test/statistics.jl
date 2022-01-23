@@ -13,9 +13,9 @@ DATA_TYPE = Float32
     x = CuArray(randn(DATA_TYPE, nx))  # standard normal data with mean 0
     y = CuArray(randn(DATA_TYPE, ny))
 
-    wide = PermTest.tconf(x, y, alpha=0.001)
-    narrow = PermTest.tconf(x, y, alpha=0.2)
-    # println("lo: ", wide_lo, ", hi: ", narrow_lo)
+    wide = PermTest.tconf(x, y, alpha=0.001)[1]
+    narrow = PermTest.tconf(x, y, alpha=0.2)[1]
+    # println("wide: ", wide, " narrow: ", narrow)
 
     @testset "search()" begin
         @test isapprox(PermTest.search(x, y, px, py, wide[1], narrow[1], pooled=false),
