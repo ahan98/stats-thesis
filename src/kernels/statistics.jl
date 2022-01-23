@@ -1,18 +1,63 @@
 module PermTestCUDA
 
-export pval, t, var
+export search, pval, t, var
 
 using CUDA
 include("../utils.jl")
 include("math.jl")
 
+
+function search(x, y, px, py, lo, hi; pooled=true, alternative="two-sided",
+                margin=0.005, threshold=1.0, alpha=0.05)
+    # println(x)
+    # println(y)
+    p_lo = pval(x, y, px, py, pooled=pooled, alternative=alternative, delta=lo)
+    # println("---")
+    # println(x)
+    # println(y)
+
+    p_end = pval(x, y, px, py, pooled=pooled, alternative=alternative, delta=hi)
+    # println("p_lo = ", p_lo, ", p_end = ", p_end)
+    # p-values corresponding to `lo` and `hi` must be on opposite sides of `alpha`
+    @assert (p_lo - alpha) * (p_end - alpha) <= 0
+
+    p = p_new = delta = nothing
+    percent_change = (old, new) -> 100 * abs(new-old) / old
+
+    # i = 0
+    while true
+        # i += 1
+        # println("iteration ", i)
+        delta = (lo + hi) / 2
+        p_new = pval(x, y, px, py, pooled=pooled, alternative=alternative, delta=delta)
+
+        if !isnothing(p) && percent_change(p, p_new) <= threshold
+            break  # (1) percent change in p-value is below `threshold`
+        end
+
+        if p_new > alpha + margin
+            lo = delta
+        elseif p_new < alpha + margin
+            hi = delta
+        else
+            break  # (2) p-value is within `margin` of `alpha`
+        end
+
+        p = p_new
+    end
+
+    return delta
+end
+
+
 function pval(x, y, px, py; pooled=false, alternative="two-sided", delta=0)
     T, B = Utils.set_thread_block(size(x,1))
-    @cuda threads=T blocks=B sub!(x, delta)
+    x_shift = copy(x)
+    @cuda threads=T blocks=B sub!(x_shift, delta)
     
-    t_obs = t(x', y', pooled)  # test statistic for observed data
+    t_obs = t(x_shift', y', pooled)  # test statistic for observed data
 
-    combined = vcat(x, y)  # join original pair into single vector
+    combined = vcat(x_shift, y)  # join original pair into single vector
     @inbounds xs = combined[px]   # get all combinations of pairs from original pair
     @inbounds ys = combined[py]
     ts = t(xs, ys, pooled)   # test statistic for all possible pairs of samples

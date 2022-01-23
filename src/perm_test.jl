@@ -1,5 +1,5 @@
 module PermTest
-export ttest_ind
+export ttest_ind, tconf
 
 using Statistics, HypothesisTests, Distributions
 using Distributed
