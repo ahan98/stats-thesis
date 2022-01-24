@@ -1,11 +1,11 @@
 module PermTest
-export ttest_ind, tconf
+export permInterval, search, pval, ttest_ind, tconf
 
 using Statistics, HypothesisTests, Distributions
 using Distributed
 
 
-function permInterval(x1, x2, parts1, parts2, delta_true; pooled=true, alpha=0.05, alternative="two-sided")
+function permInterval(x1, x2, parts1, parts2, delta_true, wide, narrow; pooled=true, alpha=0.05, alternative="two-sided")
     """Returns true (false) if permutation test confidence interval does (not) include difference in
     population means.
 
@@ -33,14 +33,11 @@ function permInterval(x1, x2, parts1, parts2, delta_true; pooled=true, alpha=0.0
         True (false) if permutation test confidence interval does (not) include difference in population means.
     """
 
-    # provide estimates of permutation test CI using t-test CIs
-    wide_lo, wide_hi = tconf(x1, x2, alpha=0.01, pooled=pooled)[1]
-    narrow_lo, narrow_hi = tconf(x1, x2, alpha=0.1, pooled=pooled)[1]
     # println(wide_lo, " ", wide_hi)
     # println(narrow_lo, " ", narrow_hi)
     # use binary search to find approximate permutation test confidence interval
-    lo = search(x1, x2, parts1, parts2, wide_lo, narrow_lo, pooled=pooled, alpha=alpha, alternative=alternative)
-    hi = search(x1, x2, parts1, parts2, narrow_hi, wide_hi, pooled=pooled, alpha=alpha, alternative=alternative)
+    lo = search(x1, x2, parts1, parts2, wide[1], narrow[1], pooled=pooled, alpha=alpha, alternative=alternative)
+    hi = search(x1, x2, parts1, parts2, narrow[2], wide[1], pooled=pooled, alpha=alpha, alternative=alternative)
     # println("(", lo, ", ", hi, ")")
     return lo <= delta_true <= hi
 end
