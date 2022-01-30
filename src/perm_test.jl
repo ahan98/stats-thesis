@@ -1,6 +1,3 @@
-module PermTest
-export permInterval, search, pval, ttest_ind, tconf
-
 using Statistics, HypothesisTests, Distributions
 using Distributed
 
@@ -45,47 +42,6 @@ end
 
 function search(x1, x2, parts1, parts2, start, stop; pooled=true, alternative="two-sided",
                 margin=0.005, threshold=1.0, alpha=0.05)
-    """Returns the difference in means for which the corresponding permutation
-    test has a p-value approximately equal to alpha.
-
-    This method returns the value for delta such that
-    pval(x1, x2, partitions; pooled=true, alternative="two-sided", delta=delta) ~= alpha
-
-    This method performs a binary search for delta in [start, stop], converging if one
-    of the following occurs:
-    (1) The percent change between the last two p-values is at most `threshold`.
-    (2) The newest p-value is within `margin` of `alpha`.
-
-    Parameters
-    ----------
-    x1 : Vector{Float64}
-        Data for group 1
-    x2 : Vector{Float64}
-        Data for group 2
-    partitions : Tuple{Matrix{Int64}, Matrix{Int64}}
-        Each row of the first/second matrix contains the indexes of the original n1+n2 elements
-        denoting each arrangement of the first/second group.
-    start : Float64
-        Initial lower estimate of delta
-    stop : Float64
-        Initial upper estimate of delta
-    pooled : Bool
-        Assume pooled or unpooled variances
-    alternative : String
-        Type of alternative hypothesis ("two-sided", "smaller", "larger")
-    margin : Float64
-        search() terminates if the newest p-value is within `margin` of `alpha`
-    threshold : Float64
-        search() terminates if the newest p-value is within `threshold` percent of the last p-value
-    alpha : Float64
-        Significance level
-
-    Returns
-    -------
-    float
-        The difference in the two population means corresponding to
-        a p-value (approximately) equal to alpha.
-    """
     p_start = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=start)
     p_end = pval(x1, x2, parts1, parts2, pooled=pooled, alternative=alternative, delta=stop)
     # println("p_start = ", p_start, ", p_end = ", p_end)
@@ -122,33 +78,6 @@ end
 
 
 function pval(x1, x2, parts1, parts2; pooled=false, alternative="two-sided", delta=0)
-    """Returns the permutation test p-value, i.e., the proportion of permutations
-    (of the original n1+n2 observations into two groups of size n1 and n2) which have
-    a test statistic as or more extreme than the observed test statistic.
-
-    Parameters
-    ----------
-    x1 : Vector{Int64}
-        Data for group 1
-    x2 : Vector{Int64}
-        Data for group 2
-    partitions : Tuple{Matrix{Int64}, Matrix{Int64}}
-        Each row of the first/second matrix contains the indexes of the original n1+n2 elements
-        denoting each arrangement of the first/second group.
-    pooled : Bool
-        Assume pooled or unpooled variances
-    alternative : String
-        Type of alternative hypothesis ("two-sided", "larger", "smaller")
-    delta : Float64
-        Amount to shift original data in group 1 under the null hypothesis
-
-    Returns
-    -------
-    Float64
-        Proportion of all possible pairs of samples which have a test statistic as
-        or more extreme than the test statistic for the original pair.
-    """
-
     x1_shifted = x1 .- delta             # shift group 1 under null hypothesis
     t_obs = ttest_ind(x1_shifted, x2, pooled)  # test statistic for observed data
     # println(t_obs)
@@ -171,25 +100,6 @@ end
 
 
 function ttest_ind(x1s, x2s, pooled)
-    """Returns the t test statistic for each pair of samples.
-
-    Each pair of samples has n1/n2 observations in the first/second group.
-    Let S denote the number of pairs.
-
-    Parameters
-    ----------
-    x1s : Matrix{Float64}
-        Data for group 1 (size S x n1)
-    x2s : Matrix{Float64}
-        Data for group 2 (size S x n2)
-    pooled : Bool
-        Assume pooled or unpooled variances
-
-    Returns
-    -------
-    Matrix{Float64}
-        Sx1 matrix where the i-th entry denotes the t test statistic for the i-th pair.
-    """
     d = ndims(x1s)  # if 1D vector, compute by column, if 2D matrix, compute by row
 
     mean1 = mean(x1s, dims=d)
@@ -209,47 +119,3 @@ function ttest_ind(x1s, x2s, pooled)
 
     return (mean1-mean2)./denom
 end
-
-
-# TODO consider merging with ttest_ind()
-function tconf(x1, x2; pooled=true, alpha=0.05)
-    """Returns (1-alpha)% t-test confidence interval for the difference in means.
-
-    Reference: http://www.stat.yale.edu/Courses/1997-98/101/meancomp.htm
-
-    Parameters
-    ----------
-    x1 : Vector{Int64}
-        Data for group 1
-    x2 : Vector{Int64}
-        Data for group 2
-    pooled : Bool
-        Assume pooled (equal) or unpooled (unequal) variances
-    alpha : Float64
-        Significance level
-
-    Returns
-    -------
-    Tuple{Float64, Float64}
-        (1-alpha)% t-test confidence interval for the difference in means
-    """
-    d1, d2 = ndims(x1), ndims(x2)
-    n1, n2 = size(x1, d1), size(x2, d2)
-    
-    if pooled
-        dof = n1 + n2 - 2
-        var1 = var2 = ((n1-1).*var(x1, dims=d1) .+ (n2-2).*var(x2, dims=d2)) ./ dof
-        #var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
-    else
-        dof = min(n1, n2) - 1
-        var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
-    end
-
-    t = TDist(dof)
-    tcrit = quantile(t, 1-(alpha/2))
-    margin = @. tcrit * sqrt(var1/n1 + var2/n2)
-    diff = mean(x1, dims=d1) .- mean(x2, dims=d2)
-    return vcat(zip(diff .- margin, diff .+ margin)...)
-end
-
-end  # module

@@ -1,7 +1,3 @@
-module Utils
-
-export partition, set_thread_block
-
 using Combinatorics
 
 function partition(n1, n2)
@@ -15,5 +11,3 @@ function set_thread_block(len, nthreads=256)
     nblocks = ceil(Int, len / nthreads)
     return nthreads, nblocks
 end
-
-end  # module
