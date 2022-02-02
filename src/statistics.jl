@@ -42,7 +42,7 @@ function t(xs, ys, pooled)
     return (meanx-meany)./denom
 end
 
-function tconf(x, y; pooled=true, alpha=0.05)
+function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
     dx, dy = ndims(x), ndims(y)
     nx, ny = size(x, dx), size(y, dy)
 
@@ -61,7 +61,7 @@ function tconf(x, y; pooled=true, alpha=0.05)
     tcrit = map(quantile, t, 1-(alpha/2))
     margin = @. tcrit * sqrt(varx/nx + vary/ny)
     diff = mean(x, dims=dx) .- mean(y, dims=dy)
-    return vcat(zip(diff .- margin, diff .+ margin)...)
+    return vcat(zip(dtype.(diff .- margin), dtype.(diff .+ margin))...)
 end
 
 

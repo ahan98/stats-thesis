@@ -1,15 +1,19 @@
-=======================
-alternative : two_sided
-pooled      : true
-alpha       : 0.05
-=======================
-0.94
-0.94
-0.93
-0.96
-0.95
-0.99
-0.96
-0.97
-0.97
-0.93
+==============================================
+num. batches : 10
+batch size   : 100
+size group 1 : 5
+size group 2 : 5
+alternative  : two_sided
+pooled       : true
+alpha        : 0.05
+==============================================
+0.92 Gamma{Float64}(α=6.0, θ=6.0)
+0.94 Gamma{Float64}(α=6.0, θ=9.0)
+0.98 Gamma{Float64}(α=9.0, θ=1.0)
+0.98 Gamma{Float64}(α=2.0, θ=5.0)
+0.94 Gamma{Float64}(α=6.0, θ=4.0)
+0.95 Gamma{Float64}(α=4.0, θ=2.0)
+0.98 Gamma{Float64}(α=1.0, θ=8.0)
+0.91 Gamma{Float64}(α=10.0, θ=6.0)
+0.96 Gamma{Float64}(α=6.0, θ=7.0)
+0.94 Gamma{Float64}(α=4.0, θ=3.0)
