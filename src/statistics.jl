@@ -42,23 +42,27 @@ function t(xs, ys, pooled)
     return (meanx-meany)./denom
 end
 
-function tconf(x1, x2; pooled=true, alpha=0.05)
-   d1, d2 = ndims(x1), ndims(x2)
-    n1, n2 = size(x1, d1), size(x2, d2)
-    
+?TDist
+
+function tconf(x::AbstractVecOrMat, y::AbstractVecOrMat; pooled=true, alpha=0.05)
+    dx, dy = ndims(x), ndims(y)
+    nx, ny = size(x, dx), size(y, dy)
+
     if pooled
-        dof = n1 + n2 - 2
-        var1 = var2 = ((n1-1).*var(x1, dims=d1) .+ (n2-2).*var(x2, dims=d2)) ./ dof
-        #var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
+        dof = nx + ny - 2
+        varx = vary = ((nx-1).*var(x, dims=dx) .+ (ny-1).*var(y, dims=dy)) ./ dof
     else
-        dof = min(n1, n2) - 1
-        var1, var2 = var(x1, dims=d1), var(x2, dims=d2)
+        # https://online.stat.psu.edu/stat415/lesson/3/3.2
+        varx, vary = var(x, dims=dx), var(y, dims=dy)
+        a, b = varx ./ nx, vary ./ ny
+        dof = @. (a + b)^2 / (a^2 / (nx - 1) + b^2 / (ny - 1))
+        println(dof)
     end
 
-    t = TDist(dof)
-    tcrit = quantile(t, 1-(alpha/2))
-    margin = @. tcrit * sqrt(var1/n1 + var2/n2)
-    diff = mean(x1, dims=d1) .- mean(x2, dims=d2)
+    t = map(TDist, dof)
+    tcrit = map(quantile, t, 1-(alpha/2))
+    margin = @. tcrit * sqrt(varx/nx + vary/ny)
+    diff = mean(x, dims=dx) .- mean(y, dims=dy)
     return vcat(zip(diff .- margin, diff .+ margin)...)
 end
 
