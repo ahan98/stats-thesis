@@ -42,14 +42,18 @@ function t(xs, ys, pooled)
     return (meanx-meany)./denom
 end
 
-?TDist
+using Random
+Random.seed!(123)
+x = randn(5, 5, 5)
+y = randn(5, 5, 5)
+tconf(x, y)
 
-function tconf(x::AbstractVecOrMat, y::AbstractVecOrMat; pooled=true, alpha=0.05)
+function tconf(x, y; pooled=true, alpha=0.05)
     dx, dy = ndims(x), ndims(y)
     nx, ny = size(x, dx), size(y, dy)
 
     if pooled
-        dof = nx + ny - 2
+        dof = [nx + ny - 2]
         varx = vary = ((nx-1).*var(x, dims=dx) .+ (ny-1).*var(y, dims=dy)) ./ dof
     else
         # https://online.stat.psu.edu/stat415/lesson/3/3.2
@@ -65,6 +69,7 @@ function tconf(x::AbstractVecOrMat, y::AbstractVecOrMat; pooled=true, alpha=0.05
     diff = mean(x, dims=dx) .- mean(y, dims=dy)
     return vcat(zip(diff .- margin, diff .+ margin)...)
 end
+
 
 function _mean(x, d)
     d = ndims(x)
