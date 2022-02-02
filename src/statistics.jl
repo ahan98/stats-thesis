@@ -42,12 +42,6 @@ function t(xs, ys, pooled)
     return (meanx-meany)./denom
 end
 
-using Random
-Random.seed!(123)
-x = randn(5, 5, 5)
-y = randn(5, 5, 5)
-tconf(x, y)
-
 function tconf(x, y; pooled=true, alpha=0.05)
     dx, dy = ndims(x), ndims(y)
     nx, ny = size(x, dx), size(y, dy)
