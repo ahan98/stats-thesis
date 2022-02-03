@@ -1,5 +1,7 @@
 using Statistics, Distributions
 
+using CUDA
+
 function t(xs, ys, pooled)
     """
     Parameters
