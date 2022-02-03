@@ -56,7 +56,7 @@ function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
         varx, vary = var(x, dims=dx), var(y, dims=dy)
         a, b = varx ./ nx, vary ./ ny
         dof = @. (a + b)^2 / (a^2 / (nx - 1) + b^2 / (ny - 1))
-        println(dof)
+        # println(dof)
     end
 
     t = map(TDist, dof)
