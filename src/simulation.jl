@@ -1,3 +1,11 @@
+module Simulation
+
+export coverage
+export Alternative, less, greater, twoSided
+
+@enum Alternative less greater twoSided
+
+
 function coverage(xs, ys, wide, narrow, delta_true, args)
     results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
     results = hcat(results...)
@@ -125,4 +133,6 @@ function testStatDistr(x, y, px, py, pooled)
     xs = combined[px]          # get all combinations of pairs from original pair
     ys = combined[py]
     return t(xs, ys, pooled)   # test statistic for all possible pairs of samples
+end
+
 end

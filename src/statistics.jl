@@ -1,5 +1,8 @@
-using Statistics, Distributions
+module TestStatistics
 
+export t, tconf
+
+using Statistics, Distributions
 
 function t(xs, ys, pooled)
     """
@@ -9,12 +12,12 @@ function t(xs, ys, pooled)
         Data for group 1
         If N == 1, then size(xs) = (nx,)
         If N == 2, then size(xs) = (S, nx)
-    
+
     ys : AbstractArray{Real, N}
         Data for group 2
         If N == 1, then size(ys) = (ny,)
         If N == 2, then size(ys) = (S, ny)
-    
+
     pooled : Bool
         Assume equal/unequal variances for the two groups
 
@@ -27,7 +30,7 @@ function t(xs, ys, pooled)
 
     meanx = _mean(xs, d)
     varx  = _var(xs, d, meanx)
-    
+
     meany = _mean(ys, d)
     vary = _var(ys, d, meany)
 
@@ -83,4 +86,6 @@ end
 function _var(x, d)
     means = _mean(x ,d)
     return _var(x, d, means)
+end
+
 end

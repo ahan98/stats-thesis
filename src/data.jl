@@ -1,3 +1,7 @@
+module Data
+
+export generateData
+
 function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY)
     """
     Parameters
@@ -40,4 +44,6 @@ function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY)
     narrow = reshape(narrow, B, S)
 
     return x, y, wide, narrow, deltas, distrX, distrY
+end
+
 end
