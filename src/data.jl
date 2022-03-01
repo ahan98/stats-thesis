@@ -39,5 +39,5 @@ function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY)
     wide   = reshape(wide, B, S)
     narrow = reshape(narrow, B, S)
 
-    return x, y, wide, narrow
+    return x, y, wide, narrow, deltas, distrX, distrY
 end
