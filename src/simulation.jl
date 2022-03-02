@@ -3,13 +3,18 @@ module Simulation
 export coverage
 export Alternative, less, greater, twoSided
 
-@enum Alternative less greater twoSided
+using Statistics: mean
 
+include("statistics.jl")
+using .TestStatistics
+
+@enum Alternative less greater twoSided
 
 function coverage(xs, ys, wide, narrow, delta_true, args)
     results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
     results = hcat(results...)
-    coverage = sum(results[1,:]) / S
+    @show size(xs, 1)
+    coverage = sum(results[1,:]) / size(xs, 1)
     avg_CI_width = mean(results[2,:])
     return coverage, avg_CI_width
 end
@@ -44,13 +49,15 @@ function permInterval(x, y, wide, narrow, delta_true, args)
     """
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
-    lo = search(x, y, wide_lo, narrow_lo, args.px, args.py, args.pooled, args.alt_lo, isLowerBound=true)
-    hi = search(x, y, narrow_hi, wide_hi, args.px, args.py, args.pooled, args.alt_hi, isLowerBound=false)
+    lo = search(x, y, wide_lo, narrow_lo,
+                args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
+    hi = search(x, y, narrow_hi, wide_hi,
+                args.px, args.py, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
     return [(lo <= delta_true <= hi), hi - lo]
 end
 
 
-function search(x, y, start, stop, px, py, pooled, alternative;
+function search(x, y, start, stop, px, py, pooled, alternative, alpha;
                 isLowerBound=true, margin=0.005, threshold=1.0)
     p_start = pval(x, y, start, px, py, pooled, alternative)
     p_end   = pval(x, y, stop,  px, py, pooled, alternative)
@@ -85,7 +92,7 @@ function search(x, y, start, stop, px, py, pooled, alternative;
 end
 
 
-function pval(x, y, delta, px, py, pooled, alternative)
+function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
     """
     Parameters
     ----------
