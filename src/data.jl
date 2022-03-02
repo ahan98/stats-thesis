@@ -1,4 +1,13 @@
-function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY)
+module Data
+
+export generateData
+
+using Distributions
+
+include("statistics.jl")
+using .TestStatistics
+
+function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, paramsY, dtype=Float32)
     """
     Parameters
     ----------
@@ -40,4 +49,6 @@ function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY)
     narrow = reshape(narrow, B, S)
 
     return x, y, wide, narrow, deltas, distrX, distrY
+end
+
 end
