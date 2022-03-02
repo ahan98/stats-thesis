@@ -1,19 +1,18 @@
 module Simulation
 
 export coverage
-export Alternative, less, greater, twoSided
+export Alternative, smaller, greater, twoSided
 
 using Statistics: mean
 
 include("statistics.jl")
 using .TestStatistics
 
-@enum Alternative less greater twoSided
+@enum Alternative smaller greater twoSided
 
 function coverage(xs, ys, wide, narrow, delta_true, args)
     results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
     results = hcat(results...)
-    @show size(xs, 1)
     coverage = sum(results[1,:]) / size(xs, 1)
     avg_CI_width = mean(results[2,:])
     return coverage, avg_CI_width
@@ -121,7 +120,7 @@ function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
     t_obs = t(x_shift, y, pooled)  # test statistic for observed data
     ts = testStatDistr(x_shift, y, px, py, pooled)
 
-    if alternative == less
+    if alternative == smaller
         n_extreme = count(ts .<= t_obs)
     elseif alternative == greater
         n_extreme = count(ts .>= t_obs)
