@@ -6,7 +6,7 @@
 4. mv julia-1.7.1/ /opt/
 5. ln -s /opt/julia-1.7.1/bin/julia /usr/local/bin/julia
 
-### Packages
+## Packages
 
 ```
 pkg> add Folds, Distributions, HypothesisTests, Combinatorics, CUDA, FLoops, IJulia
@@ -14,5 +14,7 @@ pkg> add Folds, Distributions, HypothesisTests, Combinatorics, CUDA, FLoops, IJu
 
 ## Multithreaded Kernel
 
+```
 using IJulia
 installkernel("Julia (8 threads)", env=Dict("JULIA_NUM_THREADS"=>"8"))
+```
