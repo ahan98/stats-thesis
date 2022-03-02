@@ -13,6 +13,7 @@ using .TestStatistics
 
 function coverage(xs, ys, wide, narrow, delta_true, args)
     S = size(xs, 1)
+
     basesize = ceil(Int, S / Threads.nthreads())
     @floop ThreadedEx(basesize = basesize) for i in 1:S
         a, b = permInterval(xs[i,:], ys[i,:], wide[i], narrow[i], delta_true, args)
@@ -21,11 +22,12 @@ function coverage(xs, ys, wide, narrow, delta_true, args)
             width += b
         end
     end
-    # results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
-    # results = hcat(results...)
-    # coverage = sum(results[1,:]) / S
-    # avgWidths = mean(results[2,:])
     return coverage / S, width / S
+
+    # results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
+    # coverage = sum(x for (x, _) in results) / S
+    # avgWidth = sum(x for (_, x) in results) / S
+    # return coverage, avgWidth
 end
 
 
