@@ -4,6 +4,7 @@ export coverage
 export Alternative, smaller, greater, twoSided
 
 using Statistics: mean
+using FLoops
 
 include("statistics.jl")
 using .TestStatistics
@@ -11,11 +12,20 @@ using .TestStatistics
 @enum Alternative smaller greater twoSided
 
 function coverage(xs, ys, wide, narrow, delta_true, args)
-    results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
-    results = hcat(results...)
-    coverage = sum(results[1,:]) / size(xs, 1)
-    avg_CI_width = mean(results[2,:])
-    return coverage, avg_CI_width
+    S = size(xs, 1)
+    basesize = ceil(Int, S / Threads.nthreads())
+    @floop ThreadedEx(basesize = basesize) for i in 1:S
+        a, b = permInterval(xs[i,:], ys[i,:], wide[i], narrow[i], delta_true, args)
+        @reduce() do (coverage = 0.0f0; a), (width = 0.0f0; b)
+            coverage += a
+            width += b
+        end
+    end
+    # results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
+    # results = hcat(results...)
+    # coverage = sum(results[1,:]) / S
+    # avgWidths = mean(results[2,:])
+    return coverage / S, width / S
 end
 
 
@@ -52,7 +62,7 @@ function permInterval(x, y, wide, narrow, delta_true, args)
                 args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
     hi = search(x, y, narrow_hi, wide_hi,
                 args.px, args.py, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
-    return [(lo <= delta_true <= hi), hi - lo]
+    return (lo <= delta_true <= hi), (hi - lo)
 end
 
 
