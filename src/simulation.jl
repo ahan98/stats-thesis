@@ -15,19 +15,14 @@ function coverage(xs, ys, wide, narrow, delta_true, args)
     S = size(xs, 1)
 
     basesize = ceil(Int, S / Threads.nthreads())
-    @floop ThreadedEx(basesize = basesize) for i in 1:S
-        a, b = permInterval(xs[i,:], ys[i,:], wide[i], narrow[i], delta_true, args)
-        @reduce() do (coverage = 0.0f0; a), (width = 0.0f0; b)
+    @views @floop ThreadedEx(basesize = basesize) for i in 1:S
+        @inbounds a, b = permInterval(xs[:,i], ys[:,i], wide[i], narrow[i], delta_true, args)
+        @reduce() do (coverage = 0; a), (width = 0.0f0; b)
             coverage += a
             width += b
         end
     end
     return coverage / S, width / S
-
-    # results = permInterval.(eachrow(xs), eachrow(ys), wide, narrow, delta_true, args)
-    # coverage = sum(x for (x, _) in results) / S
-    # avgWidth = sum(x for (_, x) in results) / S
-    # return coverage, avgWidth
 end
 
 
@@ -60,10 +55,14 @@ function permInterval(x, y, wide, narrow, delta_true, args)
     """
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
-    lo = search(x, y, wide_lo, narrow_lo,
-                args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
-    hi = search(x, y, narrow_hi, wide_hi,
-                args.px, args.py, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
+    lo = hi = undef
+    @sync begin
+        @async lo = search(x, y, wide_lo, narrow_lo,
+                           args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
+        @async hi = search(x, y, narrow_hi, wide_hi,
+                           args.px, args.py, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
+    end
+
     return (lo <= delta_true <= hi), (hi - lo)
 end
 
@@ -130,7 +129,15 @@ function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
     """
     x_shift = x .- delta
     t_obs = t(x_shift, y, pooled)  # test statistic for observed data
+    # @show t_obs
+
+    # @show size(x_shift)
+    # @show size(y)
+    # @show size(px)
+    # @show size(py)
+    # @show pooled
     ts = testStatDistr(x_shift, y, px, py, pooled)
+    # @show size(ts)
 
     if alternative == smaller
         n_extreme = count(ts .<= t_obs)
@@ -142,14 +149,14 @@ function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
         error("Undefined alternative: $alternative")
     end
 
-    return dtype(n_extreme / size(px, 1))  # proportion of pairs w/ extreme test statistic
+    return dtype(n_extreme / size(px, 2))  # proportion of pairs w/ extreme test statistic
 end
 
 
 function testStatDistr(x, y, px, py, pooled)
     combined = vcat(x, y)      # join original pair into single vector
-    xs = combined[px]          # get all combinations of pairs from original pair
-    ys = combined[py]
+    @inbounds xs = @view combined[px]          # get all combinations of pairs from original pair
+    @inbounds ys = @view combined[py]
     return t(xs, ys, pooled)   # test statistic for all possible pairs of samples
 end
 

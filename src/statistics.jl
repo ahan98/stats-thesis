@@ -26,15 +26,13 @@ function t(xs, ys, pooled)
     S-element Vector{Float64}
         t test statistic for each pair
     """
-    d = ndims(xs)  # if 1D vector, compute by column, if 2D matrix, compute by row
+    meanx = mean(xs, dims=1)
+    varx  = var(xs, dims=1)
 
-    meanx = _mean(xs, d)
-    varx  = _var(xs, d, meanx)
+    meany = mean(ys, dims=1)
+    vary  = var(ys, dims=1)
 
-    meany = _mean(ys, d)
-    vary = _var(ys, d, meany)
-
-    nx, ny = size(xs, d), size(ys, d)  # number of observations per group
+    nx, ny = size(xs, 1), size(ys, 1)  # number of observations per group
 
     if pooled
         pooled_var = ((nx-1)*varx + (ny-1)*vary) / (nx+ny-2)
@@ -48,7 +46,8 @@ end
 
 
 function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
-    dx, dy = ndims(x), ndims(y)
+    # dx, dy = ndims(x), ndims(y)
+    dx = dy = 1
     nx, ny = size(x, dx), size(y, dy)
 
     if pooled
@@ -67,25 +66,6 @@ function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
     margin = @. tcrit * sqrt(varx/nx + vary/ny)
     diff = mean(x, dims=dx) .- mean(y, dims=dy)
     return vcat(zip(dtype.(diff .- margin), dtype.(diff .+ margin))...)
-end
-
-
-function _mean(x, d)
-    d = ndims(x)
-    return sum(x, dims=d) ./ size(x, d)
-end
-
-
-function _var(x, d, means)
-    nx = size(x, d)
-    ss = sum(x.^2, dims=d)
-    return @. (ss - (nx * means.^2)) / (nx-1)
-end
-
-
-function _var(x, d)
-    means = _mean(x ,d)
-    return _var(x, d, means)
 end
 
 end
