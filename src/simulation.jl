@@ -11,21 +11,6 @@ using .TestStatistics
 
 @enum Alternative smaller greater twoSided
 
-function coverage(xs, ys, wide, narrow, delta_true, args)
-    S = size(xs, 1)
-
-    basesize = ceil(Int, S / Threads.nthreads())
-    @views @floop ThreadedEx(basesize = basesize) for i in 1:S
-        @inbounds a, b = permInterval(xs[:,i], ys[:,i], wide[i], narrow[i], delta_true, args)
-        @reduce() do (coverage = 0; a), (width = 0.0f0; b)
-            coverage += a
-            width += b
-        end
-    end
-    return coverage / S, width / S
-end
-
-
 function permInterval(x, y, wide, narrow, delta_true, args)
     """
     Parameters

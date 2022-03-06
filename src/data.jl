@@ -36,7 +36,7 @@ function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, par
     # reshape into single vector of length B*S*n and convert to `dtype`
     x = dtype.(vcat(x...))
     y = dtype.(vcat(y...))
-    @show size(x)
+    # @show size(x)
 
     # reshape to 3D batches
     x = reshape(x, (nx, S, B))
@@ -45,7 +45,7 @@ function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, par
     # Compute t confidence intervals for each of the (B x S x n) pairs
     wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
     narrow = tconf(x, y, alpha=0.4, pooled=pooled)
-    @show size(wide)
+    # @show size(wide)
 
     wide   = reshape(wide, S, B)
     narrow = reshape(narrow, S, B)
