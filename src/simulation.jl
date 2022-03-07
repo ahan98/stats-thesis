@@ -64,19 +64,41 @@ function search(x, y, start, stop, px, py, pooled, alternative, alpha;
     percent_change = (old, new) -> 100 * abs(new-old) / old
 
     while true
+        # @show start, stop
         delta = (start + stop) / 2
         p_new = pval(x, y, delta, px, py, pooled, alternative)
 
         if !isnothing(p) && percent_change(p, p_new) <= threshold
+            # println("condition 1")
             break  # (1) percent change in p-value is below `threshold`
         end
 
+        # if p_new < alpha - margin      # p-value is too small
+        #     if isLowerBound
+        #         start = delta          # go right
+        #     else
+        #         println("go left")
+        #         stop = delta           # go left
+        #     end
+        # elseif p_new > alpha + margin  # p-value is too big
+        #     if isLowerBound
+        #         stop = delta           # go left
+        #     else
+        #         println("go right")
+        #         start = delta          # go right
+        #     end
+        # else
+        #     println("condition 2")
+        #     break
+        # end
+
         compare = (alpha - p_new) - isLowerBound * 2 * (alpha - p_new)
         if margin < compare
-            stop = delta
+            stop = delta  # go left
         elseif margin < -compare
-            start = delta
+            start = delta # go right
         else
+            # println("condition 2")
             break  # (2) p-value is within `margin` of `alpha`
         end
 
