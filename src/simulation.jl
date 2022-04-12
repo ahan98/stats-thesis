@@ -1,9 +1,3 @@
-module Simulation
-
-export coverage
-export Alternative, smaller, greater, twoSided
-
-using Statistics: mean
 using FLoops
 
 include("statistics.jl")
@@ -165,6 +159,4 @@ function testStatDistr(x, y, px, py, pooled)
     @inbounds xs = @view combined[px]          # get all combinations of pairs from original pair
     @inbounds ys = @view combined[py]
     return t(xs, ys, pooled)   # test statistic for all possible pairs of samples
-end
-
 end

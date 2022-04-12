@@ -1,7 +1,3 @@
-module TestStatistics
-
-export t, tconf
-
 using Statistics, Distributions
 
 function t(xs, ys, pooled)
@@ -66,6 +62,4 @@ function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
     margin = @. tcrit * sqrt(varx/nx + vary/ny)
     diff = mean(x, dims=dx) .- mean(y, dims=dy)
     return vcat(zip(dtype.(diff .- margin), dtype.(diff .+ margin))...)
-end
-
 end

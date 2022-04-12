@@ -1,7 +1,3 @@
-module Data
-
-export generateData
-
 using Distributions
 
 include("statistics.jl")
@@ -51,6 +47,4 @@ function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, par
     narrow = reshape(narrow, S, B)
 
     return x, y, wide, narrow, deltas, distrX, distrY
-end
-
 end
