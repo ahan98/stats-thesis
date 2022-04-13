@@ -1,7 +1,3 @@
-module TestStatistics
-
-export t, tconf
-
 using Statistics, Distributions
 
 function t(xs, ys, pooled)
@@ -68,4 +64,15 @@ function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
     return vcat(zip(dtype.(diff .- margin), dtype.(diff .+ margin))...)
 end
 
+function t_estimates(x, y, pooled)
+    # Compute t confidence intervals for each of the B*S pairs
+    wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
+    narrow = tconf(x, y, alpha=0.4, pooled=pooled)
+    # @show size(wide)
+
+    _, nsamples, nbatches = size(x)
+    wide   = reshape(wide, nsamples, nbatches)
+    narrow = reshape(narrow, nsamples, nbatches)
+
+    return wide, narrow
 end
