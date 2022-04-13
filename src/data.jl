@@ -43,7 +43,7 @@ end
 
 
 function t_estimates(x, y, pooled)
-    # Compute t confidence intervals for each of the (B x S x n) pairs
+    # Compute t confidence intervals for each of the B*S pairs
     wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
     narrow = tconf(x, y, alpha=0.4, pooled=pooled)
     # @show size(wide)

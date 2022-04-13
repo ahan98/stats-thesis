@@ -4,7 +4,7 @@ include("data.jl")
 include("simulation.jl")
 
 function main(nbatches, nsamples, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY;
-              dtype=Float32, seed=123)
+              mc_size=0, dtype=Float32, seed=123, save_csv=true)
     """
     Run all settings of simulation and save results as .csv
     """
@@ -12,8 +12,9 @@ function main(nbatches, nsamples, nx, ny, distrTypeX, paramsX, distrTypeY, param
     x, y, deltas, distrX, distrY = generateData(nbatches, nsamples, nx, ny,
                                                 distrTypeX, paramsX, distrTypeY, paramsY,
                                                 dtype, seed)
-    px, py = partition(nx, ny)
-    @show x[:,1,1][1]
+
+    px, py = (mc_size == 0) ? partition(nx, ny) : (nothing, nothing)
+    permuter = (px, py, mc_size)
 
     for isTwoSided in [true, false]
         alpha_temp = alpha
@@ -26,7 +27,7 @@ function main(nbatches, nsamples, nx, ny, distrTypeX, paramsX, distrTypeY, param
         end
 
         for pooled in [true, false]
-            args = Args(px, py, pooled, alpha_temp, alt_lo, alt_hi)
+            args = Args(permuter, pooled, alpha_temp, alt_lo, alt_hi)
 
             results = Vector{Any}(undef, nbatches)
 
@@ -42,14 +43,15 @@ function main(nbatches, nsamples, nx, ny, distrTypeX, paramsX, distrTypeY, param
                 results[i] = (coverage / nsamples, width / nsamples)
             end
 
-            save(results, distrX, distrY, pooled, args.alpha, isTwoSided)
+            if save_csv
+                save(results, distrX, distrY, pooled, args.alpha, isTwoSided)
+            end
         end
     end
 end
 
 struct Args
-    px::AbstractMatrix{Int}
-    py::AbstractMatrix{Int}
+    permuter::Tuple{Union{Matrix, Nothing}, Union{Matrix, Nothing}, Int}
     pooled::Bool
     alpha::Float32
     alt_lo::Alternative

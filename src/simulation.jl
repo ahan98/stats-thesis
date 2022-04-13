@@ -37,19 +37,19 @@ function permInterval(x, y, wide, narrow, delta_true, args)
     @sync begin
         # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
-                           args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
+                           args.permuter, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
         @async hi = search(x, y, narrow_hi, wide_hi,
-                           args.px, args.py, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
+                           args.permuter, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
     end
 
     return (lo <= delta_true <= hi), (hi - lo)
 end
 
 
-function search(x, y, start, stop, px, py, pooled, alternative, alpha;
+function search(x, y, start, stop, permuter, pooled, alternative, alpha;
                 isLowerBound=true, margin=0.005, threshold=1.0)
-    p_start = pval(x, y, start, px, py, pooled, alternative)
-    p_end   = pval(x, y, stop,  px, py, pooled, alternative)
+    p_start = pval(x, y, start, permuter, pooled, alternative)
+    p_end   = pval(x, y, stop,  permuter, pooled, alternative)
 
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
@@ -60,7 +60,7 @@ function search(x, y, start, stop, px, py, pooled, alternative, alpha;
     while true
         # @show start, stop
         delta = (start + stop) / 2
-        p_new = pval(x, y, delta, px, py, pooled, alternative)
+        p_new = pval(x, y, delta, permuter, pooled, alternative)
 
         if !isnothing(p) && percent_change(p, p_new) <= threshold
             # println("condition 1")
@@ -103,7 +103,7 @@ function search(x, y, start, stop, px, py, pooled, alternative, alpha;
 end
 
 
-function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
+function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
     """
     Parameters
     ----------
@@ -137,6 +137,12 @@ function pval(x, y, delta, px, py, pooled, alternative, dtype=Float32)
     # @show size(px)
     # @show size(py)
     # @show pooled
+    px, py, mc_size = permuter
+    if mc_size > 0
+        p_mc = hcat([shuffle(1:nx+ny) for _ in 1:mc_size]...)
+        px = p_mc[1:nx, :]
+        py = p_mc[nx+1:end, :]
+    end
     ts = testStatDistr(x_shift, y, px, py, pooled)
     # @show size(ts)
 
