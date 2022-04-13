@@ -1,8 +1,4 @@
-using FLoops
-
-include("statistics.jl")
-
-@enum Alternative smaller greater twoSided
+include("t.jl")
 
 function permInterval(x, y, wide, narrow, delta_true, args)
     """

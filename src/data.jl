@@ -1,7 +1,4 @@
-using Distributions
 using Random
-
-include("statistics.jl")
 
 function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY, dtype=Float32, seed=123)
     """
@@ -39,18 +36,4 @@ function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY, dt
     y = reshape(y, (ny, S, B))
 
     return x, y, deltas, distrX, distrY
-end
-
-
-function t_estimates(x, y, pooled)
-    # Compute t confidence intervals for each of the B*S pairs
-    wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
-    narrow = tconf(x, y, alpha=0.4, pooled=pooled)
-    # @show size(wide)
-
-    _, nsamples, nbatches = size(x)
-    wide   = reshape(wide, nsamples, nbatches)
-    narrow = reshape(narrow, nsamples, nbatches)
-
-    return wide, narrow
 end

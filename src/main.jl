@@ -1,7 +1,8 @@
 using FLoops
+include("simulation.jl")
 include("util.jl")
 include("data.jl")
-include("simulation.jl")
+include("t.jl")
 
 function main(nbatches, nsamples, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY;
               mc_size=0, dtype=Float32, seed=123, save_csv=true)
@@ -57,3 +58,5 @@ struct Args
     alt_lo::Alternative
     alt_hi::Alternative
 end
+
+@enum Alternative smaller greater twoSided
