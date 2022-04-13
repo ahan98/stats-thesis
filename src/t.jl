@@ -41,7 +41,7 @@ function t(xs, ys, pooled)
 end
 
 
-function tconf(x, y; pooled=true, alpha=0.05, dtype=Float32)
+function tconf(x, y, alpha, pooled, dtype=Float32)
     # dx, dy = ndims(x), ndims(y)
     dx = dy = 1
     nx, ny = size(x, dx), size(y, dy)
@@ -66,8 +66,8 @@ end
 
 function t_estimates(x, y, pooled)
     # Compute t confidence intervals for each of the B*S pairs
-    wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
-    narrow = tconf(x, y, alpha=0.4, pooled=pooled)
+    wide   = tconf(x, y, 0.00001, pooled)
+    narrow = tconf(x, y, 0.4, pooled)
     # @show size(wide)
 
     _, nsamples, nbatches = size(x)
