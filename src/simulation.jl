@@ -1,7 +1,6 @@
 using FLoops
 
 include("statistics.jl")
-using .TestStatistics
 
 @enum Alternative smaller greater twoSided
 
@@ -28,14 +27,15 @@ function permInterval(x, y, wide, narrow, delta_true, args)
     Returns
     -------
     Bool
-        True if permutation confidence interval includes difference in population means.
+        True if permutation interval includes difference in population means.
     Float32
-        Width of permutation confidence interval
+        Width of permutation interval
     """
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
     lo = hi = undef
     @sync begin
+        # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
                            args.px, args.py, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
         @async hi = search(x, y, narrow_hi, wide_hi,

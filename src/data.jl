@@ -1,9 +1,9 @@
 using Distributions
+using Random
 
 include("statistics.jl")
-using .TestStatistics
 
-function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, paramsY, dtype=Float32)
+function generateData(B, S, nx, ny, distrTypeX, paramsX, distrTypeY, paramsY, dtype=Float32, seed=123)
     """
     Parameters
     ----------
@@ -26,25 +26,31 @@ function generateData(B, S, nx, ny, pooled, distrTypeX, paramsX, distrTypeY, par
     # @show deltas
 
     # draw S groups of n observations from each of the B distributions
+    Random.seed!(seed)
     x = rand.(distrX, S * nx)  # B vectors of length S * nx
     y = rand.(distrY, S * ny)
 
     # reshape into single vector of length B*S*n and convert to `dtype`
     x = dtype.(vcat(x...))
     y = dtype.(vcat(y...))
-    # @show size(x)
 
     # reshape to 3D batches
     x = reshape(x, (nx, S, B))
     y = reshape(y, (ny, S, B))
 
+    return x, y, deltas, distrX, distrY
+end
+
+
+function t_estimates(x, y, pooled)
     # Compute t confidence intervals for each of the (B x S x n) pairs
     wide   = tconf(x, y, alpha=0.00001, pooled=pooled)
     narrow = tconf(x, y, alpha=0.4, pooled=pooled)
     # @show size(wide)
 
-    wide   = reshape(wide, S, B)
-    narrow = reshape(narrow, S, B)
+    _, nsamples, nbatches = size(x)
+    wide   = reshape(wide, nsamples, nbatches)
+    narrow = reshape(narrow, nsamples, nbatches)
 
-    return x, y, wide, narrow, deltas, distrX, distrY
+    return wide, narrow
 end
