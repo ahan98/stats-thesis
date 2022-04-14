@@ -1,6 +1,8 @@
 include("t.jl")
 
-function permInterval(x, y, wide, narrow, delta_true, args)
+@enum Alternative smaller greater twoSided
+
+function permInterval(x, y, args)
     """
     Parameters
     ----------
@@ -27,18 +29,23 @@ function permInterval(x, y, wide, narrow, delta_true, args)
     Float32
         Width of permutation interval
     """
+
+    permuter, pooled, alpha, alt_lo, alt_hi = args  # unwrap
+    wide, narrow = t_estimates(x, y, pooled)
+
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
+
     lo = hi = undef
     @sync begin
         # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
-                           args.permuter, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
+                           permuter, pooled, alt_lo, alpha, isLowerBound=true)
         @async hi = search(x, y, narrow_hi, wide_hi,
-                           args.permuter, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
+                           permuter, pooled, alt_hi, alpha, isLowerBound=false)
     end
 
-    return (lo <= delta_true <= hi), (hi - lo)
+    return lo, hi
 end
 
 
