@@ -41,38 +41,31 @@ function t(xs, ys, pooled)
 end
 
 
-function tconf(x, y, alpha, pooled, dtype=Float32)
-    # dx, dy = ndims(x), ndims(y)
-    dx = dy = 1
-    nx, ny = size(x, dx), size(y, dy)
+function tconf(x, y, args)
+    alpha, pooled = args
+    nx, ny = length(x), length(y)
 
     if pooled
-        dof = [nx + ny - 2]
-        varx = vary = ((nx-1).*var(x, dims=dx) .+ (ny-1).*var(y, dims=dy)) ./ dof
+        dof = nx + ny - 2
+        varx = vary = ((nx-1)*var(x) + (ny-1)*var(y)) / dof
     else
         # https://online.stat.psu.edu/stat415/lesson/3/3.2
-        varx, vary = var(x, dims=dx), var(y, dims=dy)
-        a, b = varx ./ nx, vary ./ ny
-        dof = @. (a + b)^2 / (a^2 / (nx - 1) + b^2 / (ny - 1))
-        # println(dof)
+        varx, vary = var(x), var(y)
+        a, b = varx / nx, vary / ny
+        dof = (a + b)^2 / (a^2 / (nx - 1) + b^2 / (ny - 1))
     end
 
-    t = map(TDist, dof)
-    tcrit = map(quantile, t, 1-(alpha/2))
-    margin = @. tcrit * sqrt(varx/nx + vary/ny)
-    diff = mean(x, dims=dx) .- mean(y, dims=dy)
-    return vcat(zip(dtype.(diff .- margin), dtype.(diff .+ margin))...)
+    t_dof = TDist(dof)
+    tcrit = quantile(t_dof, 1-(alpha/2))
+    margin = tcrit * sqrt(varx/nx + vary/ny)
+    diff = mean(x) - mean(y)
+    return diff - margin, diff + margin
 end
 
 function t_estimates(x, y, pooled)
     # Compute t confidence intervals for each of the B*S pairs
-    wide   = tconf(x, y, 0.00001, pooled)
-    narrow = tconf(x, y, 0.4, pooled)
-    # @show size(wide)
-
-    _, nsamples, nbatches = size(x)
-    wide   = reshape(wide, nsamples, nbatches)
-    narrow = reshape(narrow, nsamples, nbatches)
+    wide   = tconf(x, y, (0.00001, pooled))
+    narrow = tconf(x, y, (0.4, pooled))
 
     return wide, narrow
 end

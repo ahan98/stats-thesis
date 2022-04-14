@@ -9,7 +9,7 @@ function partition(n1, n2)
 end
 
 
-function save(results, distrX, distrY, pooled, alpha, isTwoSided=undef; prefix="")
+function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="")
     # TODO consider changing prefix to enum type for cleaner file naming
 
     # convert results to DataFrame
@@ -19,11 +19,14 @@ function save(results, distrX, distrY, pooled, alpha, isTwoSided=undef; prefix="
 
     # save DataFrame as .csv
     filename = prefix * (length(prefix) > 0 ? "_" : "")
-    if isTwoSided != undef
+
+    if notnothing(isTwoSided)
         filename *= (isTwoSided ? "two" : "one") * "Sided_"
     end
 
-    filename *= (pooled ? "" : "un") * "pooled_" * string(alpha) * ".csv"
+    if notnothing(pooled)
+        filename *= (pooled ? "" : "un") * "pooled_" * string(alpha) * ".csv"
+    end
 
     #CSV.write("../results/" * filename, df)
     CSV.write(filename, df)

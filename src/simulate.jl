@@ -1,9 +1,7 @@
 using FLoops
-include("permutation.jl")
-include("bootstrap.jl")
-include("t.jl")
-
-@enum Alternative smaller greater twoSided
+include("intervals/permutation.jl")
+include("intervals/bootstrap.jl")
+include("intervals/t.jl")
 
 function simulate_perm(x, y, deltas, distrX, distrY; alpha=0.05, mc_size=0, save_csv=true)
     """
@@ -24,11 +22,12 @@ function simulate_perm(x, y, deltas, distrX, distrY; alpha=0.05, mc_size=0, save
         end
 
         for pooled in [true, false]
-            # TODO remove Args struct since you abstracted the simulation code elsewhere
-            args = Args(permuter, pooled, alpha_temp, alt_lo, alt_hi)
             results = simulate(x, y, deltas, distrX, distrY,
-                               permInterval, args,
-                               save_csv=save_csv)
+                               permInterval, permuter, pooled, alpha_temp, alt_lo, alt_hi)
+
+            if save_csv
+                save(results, distrX, distrY, alpha, pooled, isTwoSided)
+            end
         end
     end
 end
@@ -40,22 +39,24 @@ function simulate_bootstrap(x, y, deltas, distrX, distrY;
     """
     for pooled in [true, false]
         results = simulate(x, y, deltas, distrX, distrY,
-                           bootstrap, alpha, pooled, nsamples,
-                           save_csv=save_csv)
+                           bootstrap, alpha, pooled, nsamples)
+        if save_csv
+            save(results, distrX, distrY, alpha, pooled; prefix="")
+        end
     end
 end
 
 function simulate_t(x, y, deltas, distrX, distrY; alpha=0.05, save_csv=true)
     for pooled in [true, false]
-        # TODO either change tconf to handle only 1-D arrays (so "unvectorize" it),
-        #      OR, change code here to custom handle and not use simulate()
         results = simulate(x, y, deltas, distrX, distrY,
-                           tconf, alpha, pooled,
-                           save_csv=save_csv)
+                           tconf, alpha, pooled)
+        if save_csv
+            save(results, distrX, distrY, alpha, pooled; prefix="")
+        end
     end
 end
 
-function simulate(x, y, deltas, distrX, distrY, method, method_args...; save_csv=true)
+function simulate(x, y, deltas, distrX, distrY, method, method_args...)
     # simulates one boxplot
     # method_args are all the method-specific arguments you need to pass,
     # FOR EACH pair of samples (x[:,j,i], y[:,j,i])
@@ -73,11 +74,6 @@ function simulate(x, y, deltas, distrX, distrY, method, method_args...; save_csv
         end
         results[i] = (coverage / nsamples, width / nsamples)
     end
-
-    # # TODO extend to other interval methods
-    # if save_csv
-    #     save(results, distrX, distrY, pooled, args.alpha, isTwoSided)
-    # end
 
     return results
 end

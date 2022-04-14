@@ -1,12 +1,6 @@
 include("t.jl")
 
-struct Args
-    permuter::Tuple{Union{Matrix, Nothing}, Union{Matrix, Nothing}, Int}
-    pooled::Bool
-    alpha::Float32
-    alt_lo::Alternative
-    alt_hi::Alternative
-end
+@enum Alternative smaller greater twoSided
 
 function permInterval(x, y, args)
     """
@@ -35,7 +29,10 @@ function permInterval(x, y, args)
     Float32
         Width of permutation interval
     """
-    wide, narrow = t_estimates(x, y, args.pooled)
+
+    permuter, pooled, alpha, alt_lo, alt_hi = args  # unwrap
+    wide, narrow = t_estimates(x, y, pooled)
+
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
 
@@ -43,9 +40,9 @@ function permInterval(x, y, args)
     @sync begin
         # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
-                           args.permuter, args.pooled, args.alt_lo, args.alpha, isLowerBound=true)
+                           permuter, pooled, alt_lo, alpha, isLowerBound=true)
         @async hi = search(x, y, narrow_hi, wide_hi,
-                           args.permuter, args.pooled, args.alt_hi, args.alpha, isLowerBound=false)
+                           permuter, pooled, alt_hi, alpha, isLowerBound=false)
     end
 
     return lo, hi

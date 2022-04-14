@@ -1,7 +1,8 @@
 using StatsBase
 
 # TODO add seed
-function bootstrap(x, y, alpha, pooled, nsamples, nx=length(x), ny=length(y))
+function bootstrap(x, y, args, nx=length(x), ny=length(y))
+    alpha, pooled, nsamples = args
     sample_stats = zeros(nsamples)
     for i in 1:nsamples
         x_bs = StatsBase.sample(x, nx)
