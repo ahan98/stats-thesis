@@ -9,9 +9,7 @@ function partition(n1, n2)
 end
 
 
-function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="")
-    # TODO consider changing prefix to enum type for cleaner file naming
-
+function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="", parent_dir="")
     # convert results to DataFrame
     probs  = [i for (i, _) in results]
     widths = [j for (_, j) in results]
@@ -20,14 +18,16 @@ function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing
     # save DataFrame as .csv
     filename = prefix * (length(prefix) > 0 ? "_" : "")
 
-    if notnothing(isTwoSided)
+    if !isnothing(isTwoSided)
         filename *= (isTwoSided ? "two" : "one") * "Sided_"
     end
 
-    if notnothing(pooled)
+    if !isnothing(pooled)
         filename *= (pooled ? "" : "un") * "pooled_" * string(alpha) * ".csv"
     end
 
-    #CSV.write("../results/" * filename, df)
-    CSV.write(filename, df)
+    if !isdir(parent_dir)
+        mkdir(parent_dir)
+    end
+    CSV.write(parent_dir * filename, df)
 end

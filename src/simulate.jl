@@ -2,6 +2,7 @@ using FLoops
 include("intervals/permutation.jl")
 include("intervals/bootstrap.jl")
 include("intervals/t.jl")
+include("util.jl")
 
 function simulate_perm(x, y, deltas, distrX, distrY; alpha=0.05, mc_size=0, save_csv=true)
     """
@@ -26,7 +27,7 @@ function simulate_perm(x, y, deltas, distrX, distrY; alpha=0.05, mc_size=0, save
                                permInterval, permuter, pooled, alpha_temp, alt_lo, alt_hi)
 
             if save_csv
-                save(results, distrX, distrY, alpha, pooled, isTwoSided)
+                save(results, distrX, distrY, alpha, pooled, isTwoSided, parent_dir="../results/permutation/")
             end
         end
     end
@@ -41,7 +42,7 @@ function simulate_bootstrap(x, y, deltas, distrX, distrY;
         results = simulate(x, y, deltas, distrX, distrY,
                            bootstrap, alpha, pooled, nsamples)
         if save_csv
-            save(results, distrX, distrY, alpha, pooled; prefix="")
+            save(results, distrX, distrY, alpha, pooled, parent_dir="../results/bootstrap/")
         end
     end
 end
@@ -51,7 +52,7 @@ function simulate_t(x, y, deltas, distrX, distrY; alpha=0.05, save_csv=true)
         results = simulate(x, y, deltas, distrX, distrY,
                            tconf, alpha, pooled)
         if save_csv
-            save(results, distrX, distrY, alpha, pooled; prefix="")
+            save(results, distrX, distrY, alpha, pooled, parent_dir="../results/t/")
         end
     end
 end
