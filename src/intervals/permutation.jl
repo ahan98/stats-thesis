@@ -2,7 +2,7 @@ include("t.jl")
 
 @enum Alternative smaller greater twoSided
 
-function permInterval(x, y, args)
+function permInterval(x, y, delta, args)
     """
     Parameters
     ----------
@@ -45,7 +45,7 @@ function permInterval(x, y, args)
                            permuter, pooled, alt_hi, alpha, isLowerBound=false)
     end
 
-    return lo, hi
+    return lo <= delta <= hi, hi - lo
 end
 
 
@@ -53,7 +53,6 @@ function search(x, y, start, stop, permuter, pooled, alternative, alpha;
                 isLowerBound=true, margin=0.005, threshold=1.0)
     p_start = pval(x, y, start, permuter, pooled, alternative)
     p_end   = pval(x, y, stop,  permuter, pooled, alternative)
-
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -133,7 +132,6 @@ function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
     """
     x_shift = x .- delta
     t_obs = t(x_shift, y, pooled)  # test statistic for observed data
-    # @show t_obs
 
     # @show size(x_shift)
     # @show size(y)
@@ -153,8 +151,9 @@ function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
         n_extreme = count(ts .<= t_obs)
     elseif alternative == greater
         n_extreme = count(ts .>= t_obs)
+        # @show "g", n_extreme
     elseif alternative == twoSided
-        n_extreme = count(@. (ts <= -abs(t_obs)) | (ts >= abs(t_obs)))
+        n_extreme = sum(@. ts <= -abs(t_obs))
     else
         error("Undefined alternative: $alternative")
     end

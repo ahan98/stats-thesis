@@ -1,2 +1,2 @@
 prob,width,distrX,distrY
-1.0,3.478908191990872,"LogNormal{Float32}(μ=0.5212f0, σ=1.0424f0)","LogNormal{Float32}(μ=0.5868f0, σ=1.1736f0)"
+1.0,1.7461473309877178,"Normal{Float32}(μ=0.5212f0, σ=1.0424f0)","Normal{Float32}(μ=2.5212f0, σ=1.0424f0)"

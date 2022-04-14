@@ -26,6 +26,7 @@ function simulate_perm(x, y, deltas, distrX, distrY; alpha=0.05, mc_size=0, save
             results = simulate(x, y, deltas, distrX, distrY,
                                permInterval, permuter, pooled, alpha_temp, alt_lo, alt_hi)
 
+            @show results
             if save_csv
                 save(results, distrX, distrY, alpha, pooled, isTwoSided, parent_dir="../results/permutation/")
             end
@@ -41,6 +42,7 @@ function simulate_bootstrap(x, y, deltas, distrX, distrY;
     for pooled in [true, false]
         results = simulate(x, y, deltas, distrX, distrY,
                            bootstrap, alpha, pooled, nsamples)
+        @show results
         if save_csv
             save(results, distrX, distrY, alpha, pooled, parent_dir="../results/bootstrap/")
         end
@@ -51,6 +53,8 @@ function simulate_t(x, y, deltas, distrX, distrY; alpha=0.05, save_csv=true)
     for pooled in [true, false]
         results = simulate(x, y, deltas, distrX, distrY,
                            tconf, alpha, pooled)
+
+        @show results
         if save_csv
             save(results, distrX, distrY, alpha, pooled, parent_dir="../results/t/")
         end
@@ -63,18 +67,18 @@ function simulate(x, y, deltas, distrX, distrY, method, method_args...)
     # FOR EACH pair of samples (x[:,j,i], y[:,j,i])
 
     nsamples, nbatches = size(x, 2), size(x, 3)
+    T = Threads.nthreads()
 
     results = Vector{Any}(undef, nbatches)
-    @floop ThreadedEx() for i = 1:nbatches
-        @floop ThreadedEx() for j = 1:nsamples
-            @inbounds lo, hi = method(x[:,j,i], y[:,j,i], method_args)
-            @reduce() do (coverage = 0; lo), (width = 0.0f0; hi)
-                coverage += (lo <= deltas[i] <= hi)
-                width += (hi - lo)
+    @floop ThreadedEx(basesize=ceil(Int, nbatches / T)) for i = 1:nbatches
+        @floop ThreadedEx(basesize=ceil(Int, nsamples / T)) for j = 1:nsamples
+            @inbounds c, w = method(x[:,j,i], y[:,j,i], deltas[i], method_args)
+            @reduce() do (coverage = 0; c), (width = 0; w)
+                coverage += c
+                width += w
             end
         end
         results[i] = (coverage / nsamples, width / nsamples)
     end
-
     return results
 end

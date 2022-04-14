@@ -9,7 +9,7 @@ function partition(n1, n2)
 end
 
 
-function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="", parent_dir="")
+function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="", parent_dir="./")
     # convert results to DataFrame
     probs  = [i for (i, _) in results]
     widths = [j for (_, j) in results]

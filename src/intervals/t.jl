@@ -40,9 +40,14 @@ function t(xs, ys, pooled)
     return (meanx-meany)./denom
 end
 
-
-function tconf(x, y, args)
+function tconf(x, y, delta, args)
     alpha, pooled = args
+    lo, hi = tconf(x, y, alpha, pooled)
+    # @show lo, hi
+    return lo <= delta <= hi, hi - lo
+end
+
+function tconf(x, y, alpha::Real, pooled::Bool)
     nx, ny = length(x), length(y)
 
     if pooled
@@ -56,16 +61,15 @@ function tconf(x, y, args)
     end
 
     t_dof = TDist(dof)
-    tcrit = quantile(t_dof, 1-(alpha/2))
+    tcrit = quantile(t_dof, alpha/2)
     margin = tcrit * sqrt(varx/nx + vary/ny)
     diff = mean(x) - mean(y)
-    return diff - margin, diff + margin
+    return diff - abs(margin), diff + abs(margin)
 end
 
 function t_estimates(x, y, pooled)
     # Compute t confidence intervals for each of the B*S pairs
-    wide   = tconf(x, y, (0.00001, pooled))
-    narrow = tconf(x, y, (0.4, pooled))
-
+    wide   = tconf(x, y, 0.00001, pooled)
+    narrow = tconf(x, y, 0.4, pooled)
     return wide, narrow
 end
