@@ -3,6 +3,12 @@ include("t.jl")
 @enum Alternative smaller greater twoSided
 
 function permInterval(x, y, delta, args)
+    permuter, pooled, alpha, alt_lo, alt_hi = args
+    lo, hi = permInterval(x, y, delta, permuter, pooled, alpha, alt_lo, alt_hi)
+    return lo <= delta <= hi, hi - lo
+end
+
+function permInterval(x, y, delta, permuter, pooled, alpha, alt_lo, alt_hi)
     """
     Parameters
     ----------
@@ -30,7 +36,6 @@ function permInterval(x, y, delta, args)
         Width of permutation interval
     """
 
-    permuter, pooled, alpha, alt_lo, alt_hi = args  # unwrap
     wide, narrow = t_estimates(x, y, pooled)
 
     wide_lo, wide_hi = wide
@@ -45,7 +50,7 @@ function permInterval(x, y, delta, args)
                            permuter, pooled, alt_hi, alpha, isLowerBound=false)
     end
 
-    return lo <= delta <= hi, hi - lo
+    return lo, hi
 end
 
 
