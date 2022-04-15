@@ -2,13 +2,12 @@ include("t.jl")
 
 @enum Alternative smaller greater twoSided
 
-function permInterval(x, y, delta, args)
-    permuter, pooled, alpha, alt_lo, alt_hi = args
-    lo, hi = permInterval(x, y, delta, permuter, pooled, alpha, alt_lo, alt_hi)
+function permInterval(x, y, delta, permuter, pooled, alpha, alt_lo, alt_hi)
+    lo, hi = permInterval(x, y, permuter, pooled, alpha, alt_lo, alt_hi)
     return lo <= delta <= hi, hi - lo
 end
 
-function permInterval(x, y, delta, permuter, pooled, alpha, alt_lo, alt_hi)
+function permInterval(x, y, permuter, pooled, alpha, alt_lo, alt_hi)
     """
     Parameters
     ----------
