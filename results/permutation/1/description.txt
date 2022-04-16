@@ -1,0 +1,5 @@
+Compares two symmetric distributions w/ different means but identical variance.
+
+X ~ Normal(mu, 2 * mu)
+Y ~ Normal(5 + mu, 2 * mu)
+mu ~ Uniform(0, 1)
