@@ -1,7 +1,6 @@
 using Statistics, Distributions
 
-function tconf(x, y, delta, args)
-    alpha, pooled = args
+function tconf(x, y, delta, alpha, pooled)
     lo, hi = tconf(x, y, alpha, pooled)
     return lo <= delta <= hi, hi - lo
 end
