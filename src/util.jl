@@ -9,7 +9,7 @@ function partition(n1, n2)
 end
 
 
-function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="", parent_dir="./")
+function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing; prefix="", dir="./")
     # convert results to DataFrame
     probs  = [i for (i, _) in results]
     widths = [j for (_, j) in results]
@@ -23,11 +23,14 @@ function save(results, distrX, distrY, alpha, pooled=nothing, isTwoSided=nothing
     end
 
     if !isnothing(pooled)
-        filename *= (pooled ? "" : "un") * "pooled_" * string(alpha) * ".csv"
+        filename *= (pooled ? "" : "un") * "pooled_"
     end
+    
+    filename *= string(alpha) * ".csv"
 
-    if !isdir(parent_dir)
-        mkdir(parent_dir)
+    @show dir * filename
+    if !isdir(dir)
+        mkpath(dir)
     end
-    CSV.write(parent_dir * filename, df)
+    CSV.write(dir * filename, df)
 end
