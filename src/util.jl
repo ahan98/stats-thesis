@@ -1,11 +1,18 @@
 using Combinatorics
 using DataFrames, CSV
+using StatsBase
 
-function partition(n1, n2)
+function partition(n1, n2, MC=0)
     N = n1 + n2
-    a = hcat(combinations(1:N, n1)...)
-    b = hcat(combinations(1:N, n2)...)
-    return a, reverse(b)
+    if MC > 0
+        idxs = hcat([sample(1:N, N, replace=false) for _ in 1:MC]...)
+        a = idxs[1:n1, :]
+        b = idxs[n1+1:end, :]
+    else
+        a = hcat(combinations(1:N, n1)...)
+        b = reverse(hcat(combinations(1:N, n2)...))
+    end
+    return a, b
 end
 
 

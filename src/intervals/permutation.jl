@@ -1,4 +1,5 @@
 include("t.jl")
+using StatsBase
 
 @enum Alternative smaller greater twoSided
 
@@ -139,11 +140,11 @@ function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
     # @show size(px)
     # @show size(py)
     # @show pooled
-    px, py, mc_size = permuter
-    if mc_size > 0
-        p_mc = hcat([shuffle(1:nx+ny) for _ in 1:mc_size]...)
-        px = p_mc[1:nx, :]
-        py = p_mc[nx+1:end, :]
+    if permuter == nothing
+        nx, ny = length(x), length(y)
+        px, py = partition(nx, ny, 10_000)
+    else
+        px, py = permuter
     end
     ts = testStatDistr(x_shift, y, px, py, pooled)
     # @show size(ts)
