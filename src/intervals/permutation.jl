@@ -154,7 +154,7 @@ function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
         n_extreme = count(ts .>= t_obs)
         # @show "g", n_extreme
     elseif alternative == twoSided
-        n_extreme = sum(@. ts <= -abs(t_obs))
+        n_extreme = count(@. abs(ts) >= abs(t_obs))
     else
         error("Undefined alternative: $alternative")
     end
