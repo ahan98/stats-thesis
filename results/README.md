@@ -14,7 +14,7 @@ Y_scale = @. exp(X_mu + X_sigma^2 / 2) / Y_shape
 distrY = map(distrTypeY, Y_shape, Y_scale)
 ```
 
-2. Normal vs. Normal (symmetric; Normal; not exchangeable; unequal variance)
+2. Normal vs. Normal (symmetric; Normal; equal mean; unequal variance)
 
 ```julia
 Random.seed!(123)
@@ -30,19 +30,20 @@ Y_sigma = random(Uniform(1.5, 2), B)
 distrY = map(distrTypeY, Y_mu, Y_sigma)
 ```
 
-3. Log-Normal vs Exponential (not symmetric; not Normal; unequal means; unequal variance)
+3. Gamma vs Gumbel (not symmetric; not Normal; unequal mean; unequal variance)
 
 ```julia
 Random.seed!(123)
 
-distrTypeX = LogNormal{dtype}
-X_mu = dtype.(round.(rand(B), digits=3))
-X_sigma = dtype.(round.(rand(B) * 0.6, digits=3))
-distrX = map(distrTypeX, X_mu, X_sigma)
+distrTypeX = Gamma{dtype}
+X_shape = random(Uniform(2, 4), B)
+X_scale = random(Uniform(0.5, 2), B)
+distrX = map(distrTypeX, X_shape, X_scale)
 
-distrTypeY = Exponential{dtype}
-Y_inv_scale = dtype.(round.(rand(B), digits = 3))
-distrY = map(distrTypeY, Y_inv_scale)
+distrTypeY = Gumbel{dtype}
+Y_loc = random(Uniform(0, 1), B)
+Y_scale = random(Uniform(2, 4), B)
+distrY = map(distrTypeY, Y_loc, Y_scale)
 ```
 
 4. Laplace vs. Laplace (symmetric; exchangeable; not Normal)
