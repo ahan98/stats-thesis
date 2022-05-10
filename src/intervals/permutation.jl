@@ -3,13 +3,13 @@ using StatsBase
 
 @enum Alternative smaller greater twoSided
 
-function permInterval(x, y, delta::Real, permuter, pooled, alpha, alt_lo, alt_hi, margin=0.005)
-    lo, hi = permInterval(x, y, permuter, pooled, alpha, alt_lo, alt_hi, margin)
+function permInterval(x, y, delta::Real, perms, pooled, alpha, alt_lo, alt_hi, margin=0.005)
+    lo, hi = permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
     #@show lo, hi
     return lo <= delta <= hi, hi - lo
 end
 
-function permInterval(x, y, permuter, pooled, alpha, alt_lo, alt_hi, margin)
+function permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
     """
     Parameters
     ----------
@@ -46,19 +46,19 @@ function permInterval(x, y, permuter, pooled, alpha, alt_lo, alt_hi, margin)
     @sync begin
         # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
-                           permuter, pooled, alt_lo, alpha, isLowerBound=true, margin=margin)
+                           perms, pooled, alt_lo, alpha, isLowerBound=true, margin=margin)
         @async hi = search(x, y, narrow_hi, wide_hi,
-                           permuter, pooled, alt_hi, alpha, isLowerBound=false, margin=margin)
+                           perms, pooled, alt_hi, alpha, isLowerBound=false, margin=margin)
     end
 
     return lo, hi
 end
 
 
-function search(x, y, start, stop, permuter, pooled, alternative, alpha;
+function search(x, y, start, stop, perms, pooled, alternative, alpha;
                 isLowerBound=true, margin=0.005)
-    p_start = pval(x, y, start, permuter, pooled, alternative)
-    p_end   = pval(x, y, stop,  permuter, pooled, alternative)
+    p_start = pval(x, y, start, perms, pooled, alternative)
+    p_end   = pval(x, y, stop,  perms, pooled, alternative)
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -68,7 +68,7 @@ function search(x, y, start, stop, permuter, pooled, alternative, alpha;
     while true
         # @show start, stop
         delta = (start + stop) / 2
-        p_new = pval(x, y, delta, permuter, pooled, alternative)
+        p_new = pval(x, y, delta, perms, pooled, alternative)
 
         # if p_new < alpha - margin      # p-value is too small
         #     if isLowerBound
@@ -107,7 +107,7 @@ function search(x, y, start, stop, permuter, pooled, alternative, alpha;
 end
 
 
-function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
+function pval(x, y, delta, perms, pooled, alternative, dtype=Float32)
     """
     Parameters
     ----------
@@ -140,11 +140,11 @@ function pval(x, y, delta, permuter, pooled, alternative, dtype=Float32)
     # @show size(px)
     # @show size(py)
     # @show pooled
-    if permuter == nothing
+    if perms == nothing
         nx, ny = length(x), length(y)
         px, py = partition(nx, ny, 10_000)
     else
-        px, py = permuter
+        px, py = perms
     end
     ts = testStatDistr(x_shift, y, px, py, pooled)
     # @show size(ts)
