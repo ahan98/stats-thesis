@@ -9,7 +9,7 @@
 ## Packages
 
 ```
-pkg> add Folds, Distributions, HypothesisTests, Combinatorics, CUDA, FLoops, IJulia
+pkg> add Folds, Distributions, HypothesisTests, Combinatorics, CUDA, FLoops, IJulia, DataFrames, CSV, BenchmarkTools
 ```
 
 ## Multithreaded Kernel
