@@ -1,11 +1,18 @@
 using Combinatorics
 using DataFrames, CSV
 using StatsBase
+using Distributions, Random
 
-function partition(n1, n2, MC=0)
+
+function random(D, n, dtype=Float32, digits=3)
+    return dtype.(round.(rand(D, n), digits=digits))
+end
+
+
+function partition(n1, n2, mc=0)
     N = n1 + n2
-    if MC > 0
-        idxs = hcat([sample(1:N, N, replace=false) for _ in 1:MC]...)
+    if mc > 0
+        idxs = hcat([sample(1:N, N, replace=false) for _ in 1:mc]...)
         a = idxs[1:n1, :]
         b = idxs[n1+1:end, :]
     else
