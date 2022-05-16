@@ -3,13 +3,13 @@ using StatsBase
 
 @enum Alternative smaller greater twoSided
 
-function permInterval(x, y, delta::Real, perms, pooled, alpha, alt_lo, alt_hi, margin=0.005)
-    lo, hi = permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
-    #@show lo, hi
+function permInterval(x, y, wide, narrow, delta::Real, pooled, alpha, alt_lo, alt_hi, margin=0.005)
+    lo, hi = permInterval(x, y, wide, narrow, pooled, alpha, alt_lo, alt_hi, margin)
+#     @show lo, hi
     return lo <= delta <= hi, hi - lo
 end
 
-function permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
+function permInterval(x, y, wide, narrow, pooled::Bool, alpha, alt_lo, alt_hi, margin)
     """
     Parameters
     ----------
@@ -37,8 +37,6 @@ function permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
         Width of permutation interval
     """
 
-    wide, narrow = t_estimates(x, y, pooled)
-
     wide_lo, wide_hi = wide
     narrow_lo, narrow_hi = narrow
 
@@ -46,19 +44,19 @@ function permInterval(x, y, perms, pooled, alpha, alt_lo, alt_hi, margin)
     @sync begin
         # search for lower and upper bounds in parallel
         @async lo = search(x, y, wide_lo, narrow_lo,
-                           perms, pooled, alt_lo, alpha, isLowerBound=true, margin=margin)
+                           pooled, alt_lo, alpha, isLowerBound=true, margin=margin)
         @async hi = search(x, y, narrow_hi, wide_hi,
-                           perms, pooled, alt_hi, alpha, isLowerBound=false, margin=margin)
+                           pooled, alt_hi, alpha, isLowerBound=false, margin=margin)
     end
 
     return lo, hi
 end
 
 
-function search(x, y, start, stop, perms, pooled, alternative, alpha;
+function search(x, y, start, stop, pooled, alternative, alpha;
                 isLowerBound=true, margin=0.005)
-    p_start = pval(x, y, start, perms, pooled, alternative)
-    p_end   = pval(x, y, stop,  perms, pooled, alternative)
+    p_start = pval(x, y, start, pooled, alternative)
+    p_end   = pval(x, y, stop,  pooled, alternative)
     # p-values corresponding to `start` and `stop` must be on opposite sides of `alpha`
     @assert (p_start - alpha) * (p_end - alpha) <= 0
 
@@ -68,7 +66,7 @@ function search(x, y, start, stop, perms, pooled, alternative, alpha;
     while true
         # @show start, stop
         delta = (start + stop) / 2
-        p_new = pval(x, y, delta, perms, pooled, alternative)
+        p_new = pval(x, y, delta, pooled, alternative)
 
         # if p_new < alpha - margin      # p-value is too small
         #     if isLowerBound
@@ -107,7 +105,7 @@ function search(x, y, start, stop, perms, pooled, alternative, alpha;
 end
 
 
-function pval(x, y, delta, perms, pooled, alternative, dtype=Float32)
+function pval(x::P, y::P, d, pooled, alternative, dtype=Float32)
     """
     Parameters
     ----------
@@ -132,35 +130,47 @@ function pval(x, y, delta, perms, pooled, alternative, dtype=Float32)
         Proportion of pairs among all sample combinations which have
         a test statistic as or more extreme than the original pair (x, y)
     """
-    x_shift = x .- delta
-    t_obs = t(x_shift, y, pooled)  # test statistic for observed data
-
-    # @show size(x_shift)
-    # @show size(y)
-    # @show size(px)
-    # @show size(py)
-    # @show pooled
-    if perms == nothing
-        nx, ny = length(x), length(y)
-        px, py = partition(nx, ny, 10_000)
-    else
-        px, py = perms
-    end
-    ts = testStatDistr(x_shift, y, px, py, pooled)
-    # @show size(ts)
+    x_var, x_mean = var_shift(x, d)
+    y_var, y_mean = var_shift(y, d)
+    
+    diff = @. x_mean - y_mean
+    denom = @. sqrt(x_var / x.n + y_var / y.n)
+    
+    ts = @. diff / denom
 
     if alternative == smaller
-        n_extreme = count(ts .<= t_obs)
+        n_extreme = count(ts .<= ts[1])
     elseif alternative == greater
-        n_extreme = count(ts .>= t_obs)
+        n_extreme = count(ts .>= ts[1])
         # @show "g", n_extreme
     elseif alternative == twoSided
-        n_extreme = count(@. abs(ts) >= abs(t_obs))
+        n_extreme = count(@. abs(ts) >= abs(ts[1]))
     else
         error("Undefined alternative: $alternative")
     end
 
-    return dtype(n_extreme / size(px, 2))  # proportion of pairs w/ extreme test statistic
+    return n_extreme / length(ts)  # proportion of pairs w/ extreme test statistic
+end
+
+
+# function pval(x::P, y::P, d)
+#     x_var, x_mean = var_shift(x, d)
+#     y_var, y_mean = var_shift(y, d)
+    
+#     diff = @. x_mean - y_mean
+#     denom = @. sqrt(x_var / x.n + y_var / y.n)
+    
+#     ts = @. diff / denom
+
+#     return count(@. abs(ts) >= abs(ts[1])) / length(ts)
+# end
+
+function var_shift(a::P, d)
+    temp = a.nshift * d
+    n = a.n
+    mean_ = a.mean_og .- temp/n
+    var_ = @. a.var_og + (temp^2/n + temp*d - 2*d*a.shift_sum + 2*temp*(a.mean_og - temp/n))/(n-1)
+    return var_, mean_
 end
 
 
