@@ -2,6 +2,13 @@ include("t.jl")
 using StatsBase
 
 @enum Alternative smaller greater twoSided
+struct P
+    mean_og   # unshifted group mean
+    var_og    # unshifted group variance
+    nshift    # number of items to be shifted
+    shift_sum # original sum of items to be shifted
+    n         # group size
+end
 
 function permInterval(x, y, wide, narrow, delta::Real, pooled, alpha, alt_lo, alt_hi, margin=0.005)
     lo, hi = permInterval(x, y, wide, narrow, pooled, alpha, alt_lo, alt_hi, margin)
@@ -137,6 +144,8 @@ function pval(x::P, y::P, d, pooled, alternative, dtype=Float32)
     denom = @. sqrt(x_var / x.n + y_var / y.n)
     
     ts = @. diff / denom
+    # @show ts[1:5]
+    
 
     if alternative == smaller
         n_extreme = count(ts .<= ts[1])

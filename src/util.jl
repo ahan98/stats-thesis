@@ -13,6 +13,7 @@ function partition(n1, n2, mc=0)
     N = n1 + n2
     if mc > 0
         idxs = hcat([sample(1:N, N, replace=false) for _ in 1:mc]...)
+        idxs = hcat(1:N, idxs)  # include observed sample
         a = idxs[1:n1, :]
         b = idxs[n1+1:end, :]
     else
