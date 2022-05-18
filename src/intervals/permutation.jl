@@ -141,7 +141,12 @@ function pval(x::P, y::P, d, pooled, alternative, dtype=Float32)
     y_var, y_mean = var_shift(y, d)
     
     diff = @. x_mean - y_mean
-    denom = @. sqrt(x_var / x.n + y_var / y.n)
+    if pooled
+        var_pool = @. ((x.n - 1) * x_var + (y.n - 1) * y_var) / (x.n + y.n - 2)
+        denom = var_pool .* sqrt(1 / x.n + 1 / y.n)
+    else
+        denom = @. sqrt(x_var / x.n + y_var / y.n)
+    end
     
     ts = @. diff / denom
     # @show ts[1:5]
