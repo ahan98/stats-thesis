@@ -1,0 +1,33 @@
+0. Histograms of all 3 (P, Q) settings
+
+===================================================
+
+1. Compare how each method responds to
+   changes in sample size for a fixed (P, Q)
+
+Studentized Permutation Test for each (P, Q)
+legend = sample sizes
+x-axis = (pooled/unpooled) x (invert 1 vs. 2)
+
+This gives 3 slides with (3 x 4 = 12) boxplots
+
+Repeat this same setup for t and bootstrap
+
+===================================================
+
+2. Studentized vs. Non-studentized Permutation Test
+
+If you can show in general that unpooled and invert 
+
+
+
+
+replace x-axis with distributions
+
+legend is still sample sizes
+
+for each distribution, compare best perm, best t, best bs
+
+
+
+
