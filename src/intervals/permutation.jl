@@ -140,18 +140,19 @@ function pval(x::P, y::P, d, pooled, alternative, dtype=Float32)
     x_var, x_mean = var_shift(x, d)
     y_var, y_mean = var_shift(y, d)
     
-    diff = @. x_mean - y_mean
-    if pooled
-        var_pool = @. ((x.n - 1) * x_var + (y.n - 1) * y_var) / (x.n + y.n - 2)
-        denom = var_pool .* sqrt(1 / x.n + 1 / y.n)
-    else
-        denom = @. sqrt(x_var / x.n + y_var / y.n)
-    end
+    ts = @. x_mean - y_mean
+
+#     diff = @. x_mean - y_mean
+#     if pooled
+#         var_pool = @. ((x.n - 1) * x_var + (y.n - 1) * y_var) / (x.n + y.n - 2)
+#         denom = var_pool .* sqrt(1 / x.n + 1 / y.n)
+#     else
+#         denom = @. sqrt(x_var / x.n + y_var / y.n)
+#     end
     
-    ts = @. diff / denom
+#     ts = @. diff / denom
     # @show ts[1:5]
     
-
     if alternative == smaller
         n_extreme = count(ts .<= ts[1])
     elseif alternative == greater
